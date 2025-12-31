@@ -22,7 +22,10 @@ function getDb(): Database.Database {
     fs.writeFileSync(dbPath, "");
   }
 
-  db = new Database(dbPath);
+  db = new Database(dbPath, {
+    readonly: false,
+    fileMustExist: false,
+  });
   return db;
 }
 

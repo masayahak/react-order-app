@@ -315,6 +315,8 @@ export default function NewOrderPage() {
                       onSelect={(product) => handleProductSelect(index, product)}
                       fetchSuggestions={fetchProductSuggestions}
                       displayValueSelector={(item) => `${item.product_code} ${item.product_name}`}
+                      valueSelector={(item) => item.product_code}
+                      dropdownMinWidth="400px"
                       startSearchChars={1}
                       debounceMs={300}
                     />

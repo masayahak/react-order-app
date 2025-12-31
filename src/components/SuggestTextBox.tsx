@@ -9,11 +9,13 @@ interface SuggestTextBoxProps<T> {
   onValueChange: (value: string) => void;
   onSelect: (item: T) => void;
   fetchSuggestions: (keyword: string) => Promise<T[]>;
-  displayValueSelector: (item: T) => string;
+  displayValueSelector: (item: T) => string; // リスト表示用
+  valueSelector?: (item: T) => string; // 選択後に入力フィールドにセットする値（省略時はdisplayValueSelector）
   startSearchChars?: number; // 何文字以上で検索開始するか（0なら全件表示）
   debounceMs?: number; // デバウンス時間（ミリ秒）
   className?: string;
   id?: string;
+  dropdownMinWidth?: string; // ドロップダウンの最小幅（例: '400px'）
 }
 
 export default function SuggestTextBox<T>({
@@ -23,10 +25,12 @@ export default function SuggestTextBox<T>({
   onSelect,
   fetchSuggestions,
   displayValueSelector,
+  valueSelector,
   startSearchChars = 0,
   debounceMs = 300,
   className = '',
   id,
+  dropdownMinWidth,
 }: SuggestTextBoxProps<T>) {
   const [suggestions, setSuggestions] = useState<T[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -148,7 +152,9 @@ export default function SuggestTextBox<T>({
 
   const handleSelect = (item: T) => {
     onSelect(item);
-    onValueChange(displayValueSelector(item));
+    // valueSelectorが指定されている場合はそれを使い、なければdisplayValueSelectorを使う
+    const selectedValue = valueSelector ? valueSelector(item) : displayValueSelector(item);
+    onValueChange(selectedValue);
     setIsOpen(false);
     setSelectedIndex(-1);
     setSuggestions([]);
@@ -191,7 +197,8 @@ export default function SuggestTextBox<T>({
         position: 'absolute',
         top: dropdownPosition.top,
         left: dropdownPosition.left,
-        width: dropdownPosition.width,
+        width: dropdownMinWidth || dropdownPosition.width,
+        minWidth: dropdownPosition.width,
         zIndex: 99999,
         maxHeight: '300px',
       }}
