@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 受注管理システム
 
-## Getting Started
+Blazor Serverの受注管理システムをNext.jsに移植したアプリケーションです。
 
-First, run the development server:
+## 機能
+
+- ユーザー認証・セッション管理
+- ユーザー権限（ロール）によるメニュー制御
+- 受注の一覧・検索・登録・更新・削除
+- 得意先・商品のサジェスト機能
+- 楽観的排他制御
+- 複合的なバリデーション
+- ヘッダー・明細の1:N構造
+
+## 技術スタック
+
+- Next.js 16 (App Router)
+- TypeScript
+- SQLite (better-sqlite3)
+- NextAuth.js v5 (認証)
+- React Hook Form + Zod (フォーム管理・バリデーション)
+- Tailwind CSS
+
+## セットアップ
+
+### 1. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 2. 開発サーバーの起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. ログイン
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+以下のテストユーザーでログインできます：
 
-## Learn More
+- **管理者**: ユーザー名 `admin` / パスワード `admin123`
+- **一般ユーザー**: ユーザー名 `user` / パスワード `user123`
 
-To learn more about Next.js, take a look at the following resources:
+## データベース
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+SQLiteデータベース（`orderapp.db`）がプロジェクトルートに自動的に作成されます。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+初期データとして以下が投入されます：
+- 2つのユーザー（admin, user）
+- 3つのサンプル得意先
+- 5つのサンプル商品
 
-## Deploy on Vercel
+## プロジェクト構造
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── (protected)/          # 認証が必要なページ
+│   │   ├── orders/            # 受注管理
+│   │   ├── customers/          # 得意先マスタ（管理者のみ）
+│   │   └── products/          # 商品マスタ（管理者のみ）
+│   ├── api/                   # APIルート
+│   ├── login/                 # ログインページ
+│   └── layout.tsx
+├── components/
+│   ├── Layout.tsx             # レイアウトコンポーネント
+│   ├── AuthGuard.tsx          # 認証ガード
+│   └── SuggestTextBox.tsx     # サジェストコンポーネント
+├── lib/
+│   ├── db.ts                  # データベース初期化
+│   ├── auth.ts                # 認証設定
+│   └── repositories/          # リポジトリパターン
+└── types/
+    └── index.ts               # TypeScript型定義
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 主な機能の説明
+
+### サジェスト機能
+
+- **得意先サジェスト**: 全件をメモリに保持し、フォーカス時に即座に表示
+- **商品サジェスト**: キーワード入力時にAPI経由で検索（デバウンス処理付き）
+
+### 楽観的排他制御
+
+受注の更新時にバージョン番号をチェックし、他のユーザーによる更新を検出します。
+
+### 権限管理
+
+- 管理者（Administrator）: すべての機能にアクセス可能
+- 一般ユーザー（User）: 受注管理のみアクセス可能
+
+## ライセンス
+
+MIT
