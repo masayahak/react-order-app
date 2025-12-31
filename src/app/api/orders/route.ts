@@ -10,12 +10,14 @@ export async function GET(request: NextRequest) {
 
   const searchParams = request.nextUrl.searchParams;
   const keyword = searchParams.get('keyword') || undefined;
+  const dateFrom = searchParams.get('dateFrom') || undefined;
+  const dateTo = searchParams.get('dateTo') || undefined;
   const page = parseInt(searchParams.get('page') || '1');
   const pageSize = parseInt(searchParams.get('pageSize') || '20');
 
   // ページングありの場合
   if (searchParams.has('page')) {
-    const result = orderRepository.getPaginated(page, pageSize, keyword);
+    const result = orderRepository.getPaginated(page, pageSize, keyword, dateFrom, dateTo);
     return NextResponse.json(result);
   }
 

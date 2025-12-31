@@ -87,7 +87,7 @@ export default function NewProductPage() {
             className="btn btn-secondary"
             onClick={() => router.back()}
           >
-            キャンセル
+            戻る
           </button>
           <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? '登録中...' : '登録'}

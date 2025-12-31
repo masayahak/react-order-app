@@ -168,8 +168,27 @@ h6 {
 .table th,
 .table td {
   padding: 0.75rem 1rem;
-  vertical-align: top;
+  vertical-align: middle;
   border-top: 1px solid #e5e7eb;
+}
+
+.align-middle {
+  vertical-align: middle !important;
+}
+
+/* 日付入力のカレンダーアイコンを見やすく */
+input[type="date"] {
+  color-scheme: light;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  filter: invert(0.5);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(0.3);
 }
 
 .table thead th {

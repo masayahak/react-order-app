@@ -14,17 +14,39 @@ export class OrderRepository {
     return db().prepare('SELECT * FROM orders ORDER BY order_date DESC, order_id DESC').all() as Order[];
   }
 
-  getPaginated(page: number = 1, pageSize: number = 20, keyword?: string): PaginatedResult<Order> {
+  getPaginated(
+    page: number = 1, 
+    pageSize: number = 20, 
+    keyword?: string,
+    dateFrom?: string,
+    dateTo?: string
+  ): PaginatedResult<Order> {
     const offset = (page - 1) * pageSize;
     let countQuery = 'SELECT COUNT(*) as count FROM orders';
     let dataQuery = 'SELECT * FROM orders';
+    const conditions: string[] = [];
     const params: any[] = [];
 
     if (keyword) {
       const searchTerm = `%${keyword}%`;
-      countQuery += ' WHERE customer_name LIKE ?';
-      dataQuery += ' WHERE customer_name LIKE ?';
+      conditions.push('customer_name LIKE ?');
       params.push(searchTerm);
+    }
+
+    if (dateFrom) {
+      conditions.push('order_date >= ?');
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      conditions.push('order_date <= ?');
+      params.push(dateTo);
+    }
+
+    if (conditions.length > 0) {
+      const whereClause = ' WHERE ' + conditions.join(' AND ');
+      countQuery += whereClause;
+      dataQuery += whereClause;
     }
 
     dataQuery += ' ORDER BY order_date DESC, order_id DESC LIMIT ? OFFSET ?';

@@ -159,7 +159,7 @@ export default function EditCustomerPage() {
               className="btn btn-secondary"
               onClick={() => router.back()}
             >
-              キャンセル
+              戻る
             </button>
             <button type="submit" className="btn btn-primary" disabled={submitting}>
               {submitting ? '更新中...' : '更新'}

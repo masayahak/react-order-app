@@ -111,10 +111,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* ロゴ・タイトル */}
         <div className="px-6 py-5 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white">
               <HomeIcon />
             </div>
-            <h1 className="text-lg font-bold text-white">受注管理</h1>
+            <h1 className="text-xl font-bold text-white drop-shadow-sm">
+              受注管理
+            </h1>
           </Link>
         </div>
 
