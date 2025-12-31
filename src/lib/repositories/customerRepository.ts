@@ -18,7 +18,7 @@ export class CustomerRepository {
     const offset = (page - 1) * pageSize;
     let countQuery = 'SELECT COUNT(*) as count FROM customers';
     let dataQuery = 'SELECT * FROM customers';
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (keyword) {
       const searchTerm = `%${keyword}%`;
@@ -66,7 +66,7 @@ export class CustomerRepository {
 
   update(id: number, customer: Partial<Omit<Customer, 'customer_id' | 'created_at' | 'updated_at'>>): Customer | null {
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | null)[] = [];
 
     if (customer.customer_name !== undefined) {
       updates.push('customer_name = ?');

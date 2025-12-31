@@ -25,7 +25,7 @@ export class OrderRepository {
     let countQuery = 'SELECT COUNT(*) as count FROM orders';
     let dataQuery = 'SELECT * FROM orders';
     const conditions: string[] = [];
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (keyword) {
       const searchTerm = `%${keyword}%`;
@@ -146,7 +146,7 @@ export class OrderRepository {
 
     const database = db();
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | null)[] = [];
 
     if (order.customer_id !== undefined) {
       updates.push('customer_id = ?');

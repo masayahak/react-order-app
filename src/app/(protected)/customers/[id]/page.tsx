@@ -34,6 +34,7 @@ export default function EditCustomerPage() {
 
   useEffect(() => {
     loadCustomer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadCustomer = async () => {

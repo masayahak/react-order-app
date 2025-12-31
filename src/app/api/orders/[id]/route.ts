@@ -51,8 +51,8 @@ export async function PUT(
     }
 
     return NextResponse.json(order);
-  } catch (error: any) {
-    if (error.message.includes('更新されています')) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('更新されています')) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
     throw error;

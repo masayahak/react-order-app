@@ -3,13 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
-interface SuggestItem {
-  id: number;
-  name: string;
-  displayValue?: string;
-}
-
-interface SuggestTextBoxProps<T extends SuggestItem> {
+interface SuggestTextBoxProps<T> {
   value: string;
   placeholder?: string;
   onValueChange: (value: string) => void;
@@ -22,7 +16,7 @@ interface SuggestTextBoxProps<T extends SuggestItem> {
   id?: string;
 }
 
-export default function SuggestTextBox<T extends SuggestItem>({
+export default function SuggestTextBox<T>({
   value,
   placeholder,
   onValueChange,
@@ -212,7 +206,7 @@ export default function SuggestTextBox<T extends SuggestItem>({
       ) : (
         suggestions.map((item, index) => (
           <button
-            key={`${item.id}-${index}`}
+            key={index}
             type="button"
             className={`w-full text-left px-3 py-2 hover:bg-blue-50 ${
               index === selectedIndex ? 'bg-blue-100' : ''

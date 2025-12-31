@@ -18,7 +18,7 @@ export class ProductRepository {
     const offset = (page - 1) * pageSize;
     let countQuery = 'SELECT COUNT(*) as count FROM products';
     let dataQuery = 'SELECT * FROM products';
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (keyword) {
       const searchTerm = `%${keyword}%`;
@@ -64,7 +64,7 @@ export class ProductRepository {
 
   update(id: number, product: Partial<Omit<Product, 'product_id' | 'created_at' | 'updated_at'>>): Product | null {
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number)[] = [];
 
     if (product.product_name !== undefined) {
       updates.push('product_name = ?');

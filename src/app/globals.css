@@ -158,6 +158,25 @@ h6 {
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
+.btn-outline-danger {
+  color: #ef4444;
+  border-color: #ef4444;
+  background-color: transparent;
+}
+
+.btn-outline-danger:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: #ef4444;
+  border-color: #ef4444;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.btn-outline-danger:disabled {
+  color: #fca5a5;
+  border-color: #fca5a5;
+}
+
 .table {
   width: 100%;
   margin-bottom: 1rem;

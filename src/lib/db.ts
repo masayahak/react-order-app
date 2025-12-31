@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import bcrypt from 'bcryptjs';
 import fs from 'fs';
 
 let db: Database.Database | null = null;
@@ -84,8 +85,6 @@ function initializeDatabase() {
   try {
     const userCount = database.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
     if (userCount.count === 0) {
-      const bcrypt = require('bcryptjs');
-      
       // デフォルトユーザー（パスワード: admin123）
       const adminPasswordHash = bcrypt.hashSync('admin123', 10);
       database.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run('admin', adminPasswordHash, 'Administrator');
