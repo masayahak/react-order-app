@@ -17,7 +17,7 @@ type ProductFormData = z.infer<typeof productSchema>;
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
-  const id = parseInt(params.id as string);
+  const code = params.id as string;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -35,11 +35,11 @@ export default function EditProductPage() {
   useEffect(() => {
     loadProduct();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [code]);
 
   const loadProduct = async () => {
     try {
-      const response = await fetch(`/api/products/${id}`);
+      const response = await fetch(`/api/products/${code}`);
       if (response.ok) {
         const data = await response.json();
         setProduct(data);
@@ -62,7 +62,7 @@ export default function EditProductPage() {
   const onSubmit = async (data: ProductFormData) => {
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/products/${id}`, {
+      const response = await fetch(`/api/products/${code}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -88,7 +88,7 @@ export default function EditProductPage() {
 
     setDeleting(true);
     try {
-      const response = await fetch(`/api/products/${id}`, {
+      const response = await fetch(`/api/products/${code}`, {
         method: 'DELETE',
       });
 
@@ -118,6 +118,20 @@ export default function EditProductPage() {
       <h3 className="text-2xl font-bold mb-4 text-gray-900">商品マスタ修正・確認</h3>
 
       <form onSubmit={handleSubmit(onSubmit)} className="max-w-md">
+        <div className="mb-4">
+          <label htmlFor="product_code" className="form-label">
+            商品コード
+          </label>
+          <input
+            id="product_code"
+            type="text"
+            className="form-control"
+            value={code}
+            readOnly
+            style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+          />
+        </div>
+
         <div className="mb-4">
           <label htmlFor="product_name" className="form-label">
             商品名 <span className="text-red-500">*</span>

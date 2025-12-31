@@ -12,7 +12,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const product = productRepository.getById(parseInt(id));
+  const product = productRepository.getByCode(id);
 
   if (!product) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -33,7 +33,7 @@ export async function PUT(
   const { id } = await params;
   const body = await request.json();
 
-  const product = productRepository.update(parseInt(id), {
+  const product = productRepository.update(id, {
     product_name: body.product_name,
     unit_price: body.unit_price || 0,
   });
@@ -55,7 +55,7 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const success = productRepository.delete(parseInt(id));
+  const success = productRepository.delete(id);
 
   if (!success) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -63,5 +63,3 @@ export async function DELETE(
 
   return NextResponse.json({ success: true });
 }
-
-

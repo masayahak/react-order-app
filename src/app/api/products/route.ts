@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const product = productRepository.create({
+    product_code: body.product_code,
     product_name: body.product_name,
     unit_price: body.unit_price || 0,
   });

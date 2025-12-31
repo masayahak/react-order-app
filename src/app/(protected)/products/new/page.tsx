@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 const productSchema = z.object({
+  product_code: z.string().min(1, '商品コードは必須です'),
   product_name: z.string().min(1, '商品名は必須です'),
   unit_price: z.number().min(0, '単価は0以上である必要があります'),
 });
@@ -51,6 +52,21 @@ export default function NewProductPage() {
       <h3 className="text-2xl font-bold mb-4 text-gray-900">商品マスタ登録</h3>
 
       <form onSubmit={handleSubmit(onSubmit)} className="max-w-md">
+        <div className="mb-4">
+          <label htmlFor="product_code" className="form-label">
+            商品コード <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="product_code"
+            type="text"
+            className={`form-control ${errors.product_code ? 'border-red-500' : ''}`}
+            {...register('product_code')}
+          />
+          {errors.product_code && (
+            <p className="text-red-500 text-sm mt-1">{errors.product_code.message}</p>
+          )}
+        </div>
+
         <div className="mb-4">
           <label htmlFor="product_name" className="form-label">
             商品名 <span className="text-red-500">*</span>

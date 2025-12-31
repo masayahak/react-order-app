@@ -72,8 +72,8 @@ export default function ProductsPage() {
     router.push('/products/new');
   };
 
-  const handleEdit = (id: number) => {
-    router.push(`/products/${id}`);
+  const handleEdit = (code: string) => {
+    router.push(`/products/${code}`);
   };
 
   return (
@@ -107,10 +107,13 @@ export default function ProductsPage() {
           <table className="table table-striped table-bordered table-sm">
             <thead className="bg-gray-100">
               <tr>
-                <th className="text-center p-2" style={{ width: '60%' }}>
+                <th className="text-center p-2" style={{ width: '20%' }}>
+                  商品コード
+                </th>
+                <th className="text-center p-2" style={{ width: '45%' }}>
                   商品名
                 </th>
-                <th className="text-center p-2" style={{ width: '25%' }}>
+                <th className="text-center p-2" style={{ width: '20%' }}>
                   単価
                 </th>
                 <th className="text-center p-2" style={{ width: '15%' }}>
@@ -121,13 +124,14 @@ export default function ProductsPage() {
             <tbody>
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="text-center p-4">
+                  <td colSpan={4} className="text-center p-4">
                     該当する商品がありません。
                   </td>
                 </tr>
               ) : (
                 products.map((product) => (
-                  <tr key={product.product_id}>
+                  <tr key={product.product_code}>
+                    <td className="p-2">{product.product_code}</td>
                     <td className="p-2">{product.product_name}</td>
                     <td className="p-2 text-right">
                       ¥{product.unit_price.toLocaleString()}
@@ -135,7 +139,7 @@ export default function ProductsPage() {
                     <td className="text-center p-2">
                       <button
                         className="btn btn-sm btn-outline-primary"
-                        onClick={() => handleEdit(product.product_id)}
+                        onClick={() => handleEdit(product.product_code)}
                       >
                         修正・確認
                       </button>

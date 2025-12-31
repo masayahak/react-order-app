@@ -98,7 +98,7 @@ export class OrderRepository {
       'INSERT INTO orders (customer_id, customer_name, order_date, total_amount, created_by) VALUES (?, ?, ?, ?, ?)'
     );
     const insertDetail = database.prepare(
-      'INSERT INTO order_details (order_id, product_id, product_name, quantity, unit_price, amount) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO order_details (order_id, product_code, product_name, quantity, unit_price, amount) VALUES (?, ?, ?, ?, ?, ?)'
     );
 
     const transaction = database.transaction(() => {
@@ -114,7 +114,7 @@ export class OrderRepository {
       for (const detail of details) {
         insertDetail.run(
           orderId,
-          detail.product_id,
+          detail.product_code,
           detail.product_name,
           detail.quantity,
           detail.unit_price,
@@ -175,13 +175,13 @@ export class OrderRepository {
     if (details) {
       const deleteDetails = database.prepare('DELETE FROM order_details WHERE order_id = ?');
       const insertDetail = database.prepare(
-        'INSERT INTO order_details (order_id, product_id, product_name, quantity, unit_price, amount) VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT INTO order_details (order_id, product_code, product_name, quantity, unit_price, amount) VALUES (?, ?, ?, ?, ?, ?)'
       );
 
       const transaction = database.transaction(() => {
         deleteDetails.run(id);
         for (const detail of details) {
-          insertDetail.run(id, detail.product_id, detail.product_name, detail.quantity, detail.unit_price, detail.amount);
+          insertDetail.run(id, detail.product_code, detail.product_name, detail.quantity, detail.unit_price, detail.amount);
         }
       });
 

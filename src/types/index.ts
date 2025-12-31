@@ -13,7 +13,7 @@ export interface Customer {
 }
 
 export interface Product {
-  product_id: number;
+  product_code: string;
   product_name: string;
   unit_price: number;
   created_at: string;
@@ -35,7 +35,7 @@ export interface Order {
 export interface OrderDetail {
   detail_id: number;
   order_id: number;
-  product_id: number;
+  product_code: string;
   product_name: string;
   quantity: number;
   unit_price: number;
