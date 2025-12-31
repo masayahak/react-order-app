@@ -107,14 +107,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex">
       {/* サイドバー */}
-      <aside className="w-64 bg-linear-to-b from-slate-800 to-slate-900 flex flex-col fixed h-full">
+      <aside
+        className="w-64 bg-linear-to-b from-slate-800 to-slate-900 flex flex-col fixed h-full"
+        style={{ colorScheme: "dark" }}
+      >
         {/* ロゴ・タイトル */}
         <div className="px-6 py-5 border-b border-white/10">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white">
               <HomeIcon />
             </div>
-            <h1 className="text-xl font-bold text-white drop-shadow-sm">
+            <h1
+              className="text-xl font-bold drop-shadow-sm"
+              style={{ color: "#ffffff" }}
+            >
               受注管理
             </h1>
           </Link>
