@@ -300,23 +300,14 @@ export default function NewOrderPage() {
                       <MinusIcon />
                     </button>
                   </td>
-                  <td className="p-2">
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={detail.product_code || ''}
-                      readOnly
-                      style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
-                    />
-                  </td>
                   <td className="p-2" style={{ position: 'relative', zIndex: details.length - index }}>
                     <SuggestTextBox
-                      value={detail.product_name}
+                      value={detail.product_code}
                       placeholder="(商品コードまたは商品名で検索)"
                       onValueChange={(val) => {
-                        handleDetailChange(index, 'product_name', val);
+                        handleDetailChange(index, 'product_code', val);
                         if (!val) {
-                          handleDetailChange(index, 'product_code', '');
+                          handleDetailChange(index, 'product_name', '');
                           handleDetailChange(index, 'unit_price', 0);
                           handleDetailChange(index, 'amount', 0);
                         }
@@ -326,6 +317,15 @@ export default function NewOrderPage() {
                       displayValueSelector={(item) => `${item.product_code} ${item.product_name}`}
                       startSearchChars={1}
                       debounceMs={300}
+                    />
+                  </td>
+                  <td className="p-2">
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={detail.product_name || ''}
+                      readOnly
+                      style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
                     />
                   </td>
                   <td className="p-2">
