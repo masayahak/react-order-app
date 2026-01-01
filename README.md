@@ -1,98 +1,344 @@
-# 受注管理システム
+# 受注管理システム (Order Management System)
 
-Blazor Serverの受注管理システムをNext.jsに移植したアプリケーションです。
+モダンな React/Next.js で構築された受注管理システムです。得意先管理、商品管理、受注管理の 3 つのマスターを扱います。
 
-## 機能
+## 🚀 技術スタック
 
-- ユーザー認証・セッション管理
-- ユーザー権限（ロール）によるメニュー制御
-- 受注の一覧・検索・登録・更新・削除
-- 得意先・商品のサジェスト機能
-- 楽観的排他制御
-- 複合的なバリデーション
-- ヘッダー・明細の1:N構造
+### フロントエンド
 
-## 技術スタック
+- **Next.js 16.1.1** (App Router + Turbopack)
+- **React 19.2.3**
+- **TypeScript**
+- **Tailwind CSS 3.x**
+- **shadcn/ui** - モダンな UI コンポーネントライブラリ
+- **lucide-react** - アイコン
 
-- Next.js 16 (App Router)
-- TypeScript
-- SQLite (better-sqlite3)
-- NextAuth.js v5 (認証)
-- React Hook Form + Zod (フォーム管理・バリデーション)
-- Tailwind CSS
+### バックエンド
 
-## セットアップ
+- **Next.js Server Actions** - API-less アーキテクチャ
+- **Prisma 5.22.0** - ORM
+- **SQLite** - データベース (better-sqlite3)
+- **NextAuth.js 5.0.0-beta.30** - 認証・認可
 
-### 1. 依存関係のインストール
+### フォーム・バリデーション
+
+- **React Hook Form** - フォーム管理
+- **Zod** - スキーマバリデーション
+
+## ✨ 主な機能
+
+### 🏢 得意先管理
+
+- 得意先の登録・編集・削除
+- 得意先名・電話番号での検索
+- ページング対応（10 件/ページ）
+- ソート機能（得意先名、電話番号）
+
+### 📦 商品管理
+
+- 商品の登録・編集・削除
+- 商品コード（人間が採番）による管理
+- 商品コード・商品名での検索
+- ページング対応（10 件/ページ）
+- ソート機能（商品コード、商品名、単価）
+
+### 📋 受注管理
+
+- 受注の登録・編集・削除
+- 得意先サジェスト入力
+- 商品サジェスト入力（コード・名称両対応）
+- 明細の動的追加・削除
+- 自動計算（金額、合計金額）
+- 受注日範囲検索
+- 得意先名での絞り込み
+- ページング対応（10 件/ページ）
+- ソート機能（受注日、得意先名、合計金額）
+
+### 🔐 認証・認可
+
+- ログイン機能（NextAuth.js v5）
+- ロール基づくアクセス制御
+  - **Administrator**: 全機能利用可能
+  - **User**: 閲覧のみ
+- テストログインボタン（開発用）
+
+### 🎨 UI/UX
+
+- レスポンシブデザイン
+- モダンなカラースキーム（機能ごとのテーマカラー）
+  - 得意先: エメラルドグリーン
+  - 商品: パープル
+  - 受注: ブルー
+- トースト通知（成功・エラー）
+- ローディングスケルトン
+- エラーバウンダリー
+
+## 📁 プロジェクト構造
+
+```
+orderapp/
+├── prisma/
+│   └── schema.prisma          # Prismaスキーマ
+├── src/
+│   ├── actions/               # Server Actions
+│   │   ├── customers.ts
+│   │   ├── orders.ts
+│   │   └── products.ts
+│   ├── app/
+│   │   ├── (protected)/       # 認証が必要なページ
+│   │   │   ├── customers/     # 得意先管理
+│   │   │   ├── orders/        # 受注管理
+│   │   │   ├── products/      # 商品管理
+│   │   │   └── layout.tsx
+│   │   ├── api/auth/          # NextAuth APIルート
+│   │   ├── login/             # ログインページ
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/            # 共通コンポーネント
+│   │   ├── ui/                # shadcn/uiコンポーネント
+│   │   ├── AuthGuard.tsx
+│   │   ├── DataTable.tsx      # 汎用テーブル
+│   │   ├── KeywordSearchForm.tsx
+│   │   ├── Layout.tsx
+│   │   ├── ListErrorBoundary.tsx
+│   │   ├── ListLoadingSkeleton.tsx
+│   │   ├── Pagination.tsx
+│   │   └── SuggestTextBox.tsx # サジェスト入力
+│   ├── hooks/
+│   │   └── use-toast.ts
+│   ├── lib/
+│   │   ├── repositories/      # データアクセス層
+│   │   │   ├── customerRepository.ts
+│   │   │   ├── orderRepository.ts
+│   │   │   └── productRepository.ts
+│   │   ├── auth.ts            # NextAuth設定
+│   │   ├── prisma.ts          # Prismaクライアント
+│   │   ├── serverActionHelpers.ts # 共通ヘルパー
+│   │   └── utils.ts
+│   ├── scripts/
+│   │   └── init-db.ts         # DB初期化スクリプト
+│   ├── types/
+│   │   ├── index.ts
+│   │   ├── next-auth.d.ts
+│   │   └── pagination.ts
+│   └── middleware.ts          # 認証ミドルウェア
+├── .env                       # 環境変数
+├── .env.local                 # ローカル環境変数
+├── components.json            # shadcn/ui設定
+├── next.config.ts
+├── package.json
+├── tailwind.config.ts
+└── tsconfig.json
+```
+
+## 🛠️ セットアップ
+
+### 前提条件
+
+- Node.js 18.x 以上
+- npm または yarn
+
+### 1. リポジトリのクローン
+
+```bash
+git clone <repository-url>
+cd orderapp
+```
+
+### 2. 依存関係のインストール
 
 ```bash
 npm install
 ```
 
-### 2. 開発サーバーの起動
+### 3. 環境変数の設定
+
+`.env`ファイルを作成：
+
+```env
+DATABASE_URL="file:./orderapp.db"
+AUTH_SECRET="your-secret-key-here"  # 本番環境では安全なキーを生成
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+**AUTH_SECRET の生成方法:**
+
+```bash
+openssl rand -base64 32
+```
+
+### 4. データベースの初期化
+
+```bash
+# Prisma Clientの生成
+npx prisma generate
+
+# 初期データの投入
+npm run db:init
+```
+
+**初期データ:**
+
+- ユーザー: `admin` / `admin123` (Administrator)
+- ユーザー: `user` / `user123` (User)
+- サンプル得意先 3 件
+- サンプル商品 21 件（ガンダムシリーズのモビルスーツ）
+
+### 5. 開発サーバーの起動
 
 ```bash
 npm run dev
 ```
 
-ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
+http://localhost:3000 でアクセス可能
 
-### 3. ログイン
+## 📝 利用可能なスクリプト
 
-以下のテストユーザーでログインできます：
-
-- **管理者**: ユーザー名 `admin` / パスワード `admin123`
-- **一般ユーザー**: ユーザー名 `user` / パスワード `user123`
-
-## データベース
-
-SQLiteデータベース（`orderapp.db`）がプロジェクトルートに自動的に作成されます。
-
-初期データとして以下が投入されます：
-- 2つのユーザー（admin, user）
-- 3つのサンプル得意先
-- 5つのサンプル商品
-
-## プロジェクト構造
-
-```
-src/
-├── app/
-│   ├── (protected)/          # 認証が必要なページ
-│   │   ├── orders/            # 受注管理
-│   │   ├── customers/          # 得意先マスタ（管理者のみ）
-│   │   └── products/          # 商品マスタ（管理者のみ）
-│   ├── api/                   # APIルート
-│   ├── login/                 # ログインページ
-│   └── layout.tsx
-├── components/
-│   ├── Layout.tsx             # レイアウトコンポーネント
-│   ├── AuthGuard.tsx          # 認証ガード
-│   └── SuggestTextBox.tsx     # サジェストコンポーネント
-├── lib/
-│   ├── db.ts                  # データベース初期化
-│   ├── auth.ts                # 認証設定
-│   └── repositories/          # リポジトリパターン
-└── types/
-    └── index.ts               # TypeScript型定義
+```bash
+npm run dev          # 開発サーバー起動
+npm run build        # 本番ビルド
+npm run start        # 本番サーバー起動
+npm run lint         # ESLintチェック
+npm run db:init      # データベース初期化
+npx prisma studio    # Prisma Studio起動（DB GUI）
 ```
 
-## 主な機能の説明
+## 🔑 テストユーザー
 
-### サジェスト機能
+| ユーザー名 | パスワード | ロール        | 権限                       |
+| ---------- | ---------- | ------------- | -------------------------- |
+| admin      | admin123   | Administrator | 全機能（登録・編集・削除） |
+| user       | user123    | User          | 閲覧のみ                   |
 
-- **得意先サジェスト**: 全件をメモリに保持し、フォーカス時に即座に表示
-- **商品サジェスト**: キーワード入力時にAPI経由で検索（デバウンス処理付き）
+## 🗄️ データベース構造
 
-### 楽観的排他制御
+### テーブル一覧
 
-受注の更新時にバージョン番号をチェックし、他のユーザーによる更新を検出します。
+#### users（ユーザー）
 
-### 権限管理
+- `user_id` (PK, AUTOINCREMENT)
+- `username` (UNIQUE)
+- `password_hash`
+- `role` (Administrator / User)
+- `created_at`
+- `updated_at`
 
-- 管理者（Administrator）: すべての機能にアクセス可能
-- 一般ユーザー（User）: 受注管理のみアクセス可能
+#### customers（得意先マスター）
 
-## ライセンス
+- `customer_id` (PK, AUTOINCREMENT)
+- `customer_name`
+- `phone_number`
+- `version` (楽観的排他制御用)
+- `created_at`
+- `updated_at`
+
+#### products（商品マスター）
+
+- `product_code` (PK, TEXT) ※人間が採番
+- `product_name`
+- `unit_price`
+- `version` (楽観的排他制御用)
+- `created_at`
+- `updated_at`
+
+#### orders（受注）
+
+- `order_id` (PK, AUTOINCREMENT)
+- `customer_id` (焼き付け、FK 制約なし)
+- `customer_name` (焼き付け)
+- `order_date`
+- `total_amount`
+- `version` (楽観的排他制御用)
+- `created_by`
+- `created_at`
+- `updated_at`
+
+#### order_details（受注明細）
+
+- `detail_id` (PK, AUTOINCREMENT)
+- `order_id` (FK → orders, CASCADE 削除)
+- `product_code` (焼き付け、FK 制約なし)
+- `product_name` (焼き付け)
+- `quantity`
+- `unit_price` (焼き付け)
+- `amount` (計算結果)
+
+## 🎯 主要な設計決定
+
+### 1. **API-less アーキテクチャ**
+
+- 従来の `/api` ルートではなく、Server Actions を使用
+- コロケーション向上、型安全性の強化
+
+### 2. **データ焼き付け方式**
+
+- 受注テーブルに得意先名を焼き付け
+- 受注明細テーブルに商品名・単価を焼き付け
+- マスターへの外部キー制約なし
+- 履歴データの保全を重視
+
+### 3. **楽観的排他制御**
+
+- 全マスターテーブルに`version`カラム
+- 更新時にバージョンチェック
+- 同時更新の検出とエラー通知
+
+### 4. **Repository パターン**
+
+- データアクセス層を分離
+- テスタビリティの向上
+- ビジネスロジックとデータアクセスの分離
+
+### 5. **共通化の徹底**
+
+- `DataTable` - 汎用テーブルコンポーネント
+- `serverActionHelpers` - 認証・CRUD・エラーハンドリングの共通化
+- `ListLoadingSkeleton`, `ListErrorBoundary` - UI 状態の共通化
+
+### 6. **shadcn/ui の採用**
+
+- コピー&カスタマイズ可能なコンポーネント
+- Tailwind CSS ベース
+- 高いカスタマイズ性
+
+## 🔄 開発フロー
+
+### 新機能追加時の推奨手順
+
+1. **型定義の追加** (`src/types/index.ts`)
+2. **Prisma スキーマの更新** (`prisma/schema.prisma`)
+3. **Repository の作成** (`src/lib/repositories/`)
+4. **Server Actions の作成** (`src/actions/`)
+5. **UI コンポーネントの作成** (`src/app/(protected)/`)
+
+### コード品質
+
+- TypeScript strict mode 有効
+- ESLint 設定済み
+- Prettier 推奨（未設定）
+
+## 📚 参考リンク
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [NextAuth.js v5](https://authjs.dev/)
+- [React Hook Form](https://react-hook-form.com/)
+- [Zod](https://zod.dev/)
+
+## 🐛 既知の問題
+
+- middleware 警告: Next.js 16 で`middleware`が`proxy`に名称変更予定（動作に影響なし）
+
+## 📄 ライセンス
 
 MIT
+
+## 👤 作成者
+
+開発者情報をここに記載
+
+---
+
+**最終更新日**: 2026-01-01
