@@ -8,6 +8,7 @@ export interface Customer {
   customer_id: number;
   customer_name: string;
   phone_number: string | null;
+  version: number;
   created_at: string;
   updated_at: string;
 }
@@ -16,6 +17,7 @@ export interface Product {
   product_code: string;
   product_name: string;
   unit_price: number;
+  version: number;
   created_at: string;
   updated_at: string;
 }

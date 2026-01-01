@@ -1,5 +1,8 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
@@ -41,7 +44,7 @@ export default function Pagination({
 
   if (totalPages <= 1) {
     return (
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-muted-foreground">
         {totalCount > 0 ? `全${totalCount}件` : '0件'}
       </div>
     );
@@ -49,53 +52,55 @@ export default function Pagination({
 
   return (
     <div className="flex items-center justify-between mt-4">
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-muted-foreground">
         {totalCount}件中 {startItem}〜{endItem}件を表示
       </div>
       <div className="flex items-center gap-1">
-        <button
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
         >
-          ≪
-        </button>
-        <button
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          ＜
-        </button>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
         
         {getPageNumbers().map((page) => (
-          <button
+          <Button
             key={page}
-            className={`px-3 py-1 text-sm border rounded ${
-              page === currentPage
-                ? 'bg-blue-500 text-white border-blue-500'
-                : 'hover:bg-gray-100'
-            }`}
+            variant={page === currentPage ? 'default' : 'outline'}
+            size="sm"
             onClick={() => onPageChange(page)}
+            className={page === currentPage ? 'bg-blue-500 hover:bg-blue-600' : ''}
           >
             {page}
-          </button>
+          </Button>
         ))}
 
-        <button
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          ＞
-        </button>
-        <button
-          className="px-3 py-1 text-sm border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
         >
-          ≫
-        </button>
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );

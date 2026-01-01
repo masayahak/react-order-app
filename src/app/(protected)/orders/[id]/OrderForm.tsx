@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save, Trash2, Plus, Minus } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 const orderSchema = z.object({
   customer_id: z.number().min(1, '得意先を選択してください'),
@@ -40,6 +41,7 @@ interface OrderFormProps {
 
 export default function OrderForm({ order }: OrderFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [details, setDetails] = useState<OrderDetail[]>(
@@ -148,7 +150,11 @@ export default function OrderForm({ order }: OrderFormProps) {
 
   const removeDetail = (index: number) => {
     if (details.length <= 1) {
-      alert('最低1行は必要です');
+      toast({
+        variant: "destructive",
+        title: "削除できません",
+        description: "最低1行は必要です",
+      });
       return;
     }
     setDetails((prevDetails) => prevDetails.filter((_, i) => i !== index));
@@ -163,7 +169,11 @@ export default function OrderForm({ order }: OrderFormProps) {
     );
     
     if (validDetails.length === 0) {
-      alert('明細を1件以上登録してください（商品名、数量、単価が必要です）');
+      toast({
+        variant: "destructive",
+        title: "入力エラー",
+        description: "明細を1件以上登録してください（商品名、数量、単価が必要です）",
+      });
       return;
     }
 
@@ -172,18 +182,28 @@ export default function OrderForm({ order }: OrderFormProps) {
       const result = await updateOrder(order.order_id, {
         ...data,
         total_amount: calculateTotal(),
-        details: validDetails,
-      });
+      }, validDetails);
 
       if (result.success) {
-        alert('受注を更新しました');
+        toast({
+          title: "更新完了",
+          description: "受注を更新しました",
+        });
         router.push('/orders');
       } else {
-        alert(result.error || '更新に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "更新失敗",
+          description: result.error || '更新に失敗しました',
+        });
       }
     } catch (error) {
       console.error('Failed to update order:', error);
-      alert('更新に失敗しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: '更新に失敗しました',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -197,14 +217,25 @@ export default function OrderForm({ order }: OrderFormProps) {
       const version = watch('version');
       const result = await deleteOrder(order.order_id, version);
       if (result.success) {
-        alert('受注を削除しました');
+        toast({
+          title: "削除完了",
+          description: "受注を削除しました",
+        });
         router.push('/orders');
       } else {
-        alert(result.error || '削除に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "削除失敗",
+          description: result.error || '削除に失敗しました',
+        });
       }
     } catch (error) {
       console.error('Failed to delete order:', error);
-      alert('削除に失敗しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: '削除に失敗しました',
+      });
     } finally {
       setDeleting(false);
     }
@@ -265,7 +296,13 @@ export default function OrderForm({ order }: OrderFormProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <Label className="text-lg">明細</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addDetail}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={addDetail}
+                  className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   明細を追加
                 </Button>
@@ -277,10 +314,10 @@ export default function OrderForm({ order }: OrderFormProps) {
                     <tr>
                       <th className="p-2 text-center w-12"></th>
                       <th className="p-2 text-center w-32">商品コード</th>
-                      <th className="p-2 text-center">商品名</th>
-                      <th className="p-2 text-center w-32">単価</th>
-                      <th className="p-2 text-center w-28">数量</th>
-                      <th className="p-2 text-center w-40">金額</th>
+                      <th className="p-2 text-center w-48">商品名</th>
+                      <th className="p-2 text-center w-28">単価</th>
+                      <th className="p-2 text-center w-24">数量</th>
+                      <th className="p-2 text-center w-32">金額</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -320,20 +357,14 @@ export default function OrderForm({ order }: OrderFormProps) {
                           />
                         </td>
                         <td className="p-2">
-                          <Input
-                            type="text"
-                            value={detail.product_name || ''}
-                            readOnly
-                            className="bg-muted"
-                          />
+                          <div className="px-3 py-2 text-sm">
+                            {detail.product_name || ''}
+                          </div>
                         </td>
                         <td className="p-2">
-                          <Input
-                            type="text"
-                            value={detail.unit_price > 0 ? detail.unit_price.toLocaleString() : ''}
-                            readOnly
-                            className="bg-muted text-right"
-                          />
+                          <div className="px-3 py-2 text-sm text-right">
+                            {detail.unit_price > 0 ? `¥${detail.unit_price.toLocaleString()}` : ''}
+                          </div>
                         </td>
                         <td className="p-2">
                           <Input
@@ -355,10 +386,10 @@ export default function OrderForm({ order }: OrderFormProps) {
                   </tbody>
                   <tfoot className="bg-muted font-bold">
                     <tr>
-                      <td colSpan={5} className="text-right p-2">
+                      <td colSpan={5} className="p-2 text-right pr-4">
                         合計
                       </td>
-                      <td className="text-right p-2">
+                      <td className="p-2 text-right font-semibold text-lg">
                         ¥{calculateTotal().toLocaleString()}
                       </td>
                     </tr>
@@ -368,24 +399,24 @@ export default function OrderForm({ order }: OrderFormProps) {
             </div>
 
             <div className="flex justify-between">
-              <Link href="/orders">
-                <Button type="button" variant="outline">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  戻る
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDelete}
+                disabled={deleting || submitting}
+                className="border-red-500 text-red-500 hover:bg-red-50"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {deleting ? '削除中...' : '削除'}
+              </Button>
 
               <div className="flex gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDelete}
-                  disabled={deleting || submitting}
-                  className="border-red-500 text-red-500 hover:bg-red-50"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {deleting ? '削除中...' : '削除'}
-                </Button>
+                <Link href="/orders">
+                  <Button type="button" variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    戻る
+                  </Button>
+                </Link>
 
                 <Button
                   type="submit"

@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save, Plus, Minus } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 const orderSchema = z.object({
   customer_id: z.number().min(1, '得意先を選択してください'),
@@ -35,6 +36,7 @@ interface OrderDetail {
 
 export default function OrderNewForm() {
   const router = useRouter();
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [details, setDetails] = useState<OrderDetail[]>([
     {
@@ -139,7 +141,11 @@ export default function OrderNewForm() {
 
   const removeDetail = (index: number) => {
     if (details.length <= 1) {
-      alert('最低1行は必要です');
+      toast({
+        variant: "destructive",
+        title: "削除できません",
+        description: "最低1行は必要です",
+      });
       return;
     }
     setDetails((prevDetails) => prevDetails.filter((_, i) => i !== index));
@@ -154,7 +160,11 @@ export default function OrderNewForm() {
     );
     
     if (validDetails.length === 0) {
-      alert('明細を1件以上登録してください（商品名、数量、単価が必要です）');
+      toast({
+        variant: "destructive",
+        title: "入力エラー",
+        description: "明細を1件以上登録してください（商品名、数量、単価が必要です）",
+      });
       return;
     }
 
@@ -163,18 +173,29 @@ export default function OrderNewForm() {
       const result = await createOrder({
         ...data,
         total_amount: calculateTotal(),
-        details: validDetails,
-      });
+        created_by: null,
+      }, validDetails);
 
       if (result.success) {
-        alert('受注を登録しました');
+        toast({
+          title: "登録完了",
+          description: "受注を登録しました",
+        });
         router.push('/orders');
       } else {
-        alert(result.error || '登録に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "登録失敗",
+          description: result.error || '登録に失敗しました',
+        });
       }
     } catch (error) {
       console.error('Failed to create order:', error);
-      alert('登録に失敗しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: '登録に失敗しました',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -234,7 +255,13 @@ export default function OrderNewForm() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <Label className="text-lg">明細</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addDetail}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={addDetail}
+                  className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   明細を追加
                 </Button>
@@ -246,10 +273,10 @@ export default function OrderNewForm() {
                     <tr>
                       <th className="p-2 text-center w-12"></th>
                       <th className="p-2 text-center w-32">商品コード</th>
-                      <th className="p-2 text-center">商品名</th>
-                      <th className="p-2 text-center w-32">単価</th>
-                      <th className="p-2 text-center w-28">数量</th>
-                      <th className="p-2 text-center w-40">金額</th>
+                      <th className="p-2 text-center w-48">商品名</th>
+                      <th className="p-2 text-center w-28">単価</th>
+                      <th className="p-2 text-center w-24">数量</th>
+                      <th className="p-2 text-center w-32">金額</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -289,20 +316,14 @@ export default function OrderNewForm() {
                           />
                         </td>
                         <td className="p-2">
-                          <Input
-                            type="text"
-                            value={detail.product_name || ''}
-                            readOnly
-                            className="bg-muted"
-                          />
+                          <div className="px-3 py-2 text-sm">
+                            {detail.product_name || ''}
+                          </div>
                         </td>
                         <td className="p-2">
-                          <Input
-                            type="text"
-                            value={detail.unit_price > 0 ? detail.unit_price.toLocaleString() : ''}
-                            readOnly
-                            className="bg-muted text-right"
-                          />
+                          <div className="px-3 py-2 text-sm text-right">
+                            {detail.unit_price > 0 ? `¥${detail.unit_price.toLocaleString()}` : ''}
+                          </div>
                         </td>
                         <td className="p-2">
                           <Input
@@ -324,10 +345,10 @@ export default function OrderNewForm() {
                   </tbody>
                   <tfoot className="bg-muted font-bold">
                     <tr>
-                      <td colSpan={5} className="text-right p-2">
+                      <td colSpan={5} className="p-2 text-right pr-4">
                         合計
                       </td>
-                      <td className="text-right p-2">
+                      <td className="p-2 text-right font-semibold text-lg">
                         ¥{calculateTotal().toLocaleString()}
                       </td>
                     </tr>

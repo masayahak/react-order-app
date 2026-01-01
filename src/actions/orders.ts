@@ -3,25 +3,21 @@
 import { auth } from '@/lib/auth';
 import { orderRepository } from '@/lib/repositories/orderRepository';
 import { Order, OrderDetail } from '@/types';
-import { revalidatePath } from 'next/cache';
+import { withAuth, crudHelpers } from '@/lib/serverActionHelpers';
 
-export async function getOrders(keyword?: string) {
+export async function getOrders() {
   const session = await auth();
   if (!session) {
     throw new Error('Unauthorized');
   }
 
-  if (keyword) {
-    return await orderRepository.search(keyword);
-  }
-  
   return await orderRepository.getAll();
 }
 
 export async function getOrdersPaginated(
   page: number = 1,
-  pageSize: number = 20,
-  keyword?: string,
+  pageSize: number = 10,
+  customerName?: string,
   dateFrom?: string,
   dateTo?: string
 ) {
@@ -30,7 +26,7 @@ export async function getOrdersPaginated(
     throw new Error('Unauthorized');
   }
 
-  return await orderRepository.getPaginated(page, pageSize, keyword, dateFrom, dateTo);
+  return await orderRepository.getPaginated(page, pageSize, customerName, dateFrom, dateTo);
 }
 
 export async function getOrderById(id: number) {
@@ -43,115 +39,42 @@ export async function getOrderById(id: number) {
 }
 
 export async function searchOrders(keyword: string) {
-  const session = await auth();
-  if (!session) {
-    return { success: false, error: 'Unauthorized', data: [] };
-  }
-
-  try {
+  return withAuth(async () => {
     const orders = await orderRepository.search(keyword);
-    return { success: true, data: orders };
-  } catch (error) {
-    console.error('Search orders error:', error);
-    return { success: false, error: 'Failed to search orders', data: [] };
-  }
+    return orders;
+  });
 }
 
-export async function createOrder(data: {
-  customer_id: number;
-  customer_name: string;
-  order_date: string;
-  total_amount: number;
-  details: Omit<OrderDetail, 'detail_id' | 'order_id'>[];
-}) {
-  const session = await auth();
-  if (!session) {
-    return { success: false, error: 'Unauthorized' };
-  }
-
-  try {
-    const order = await orderRepository.create(
-      {
-        customer_id: data.customer_id,
-        customer_name: data.customer_name,
-        order_date: data.order_date,
-        total_amount: data.total_amount || 0,
-        created_by: parseInt(session.user.id),
-      },
-      data.details || []
-    );
-
-    revalidatePath('/orders');
-    return { success: true, data: order };
-  } catch (error) {
-    console.error('Create order error:', error);
-    return { success: false, error: 'Failed to create order' };
-  }
+export async function createOrder(
+  order: Omit<Order, 'order_id' | 'version' | 'created_at' | 'updated_at'>,
+  details: Omit<OrderDetail, 'detail_id' | 'order_id'>[]
+) {
+  return crudHelpers.create(
+    async () => {
+      return await orderRepository.create(order, details);
+    },
+    ['/orders']
+  );
 }
 
 export async function updateOrder(
   id: number,
-  data: {
-    customer_id?: number;
-    customer_name?: string;
-    order_date?: string;
-    total_amount?: number;
-    version?: number;
-    details?: Omit<OrderDetail, 'detail_id' | 'order_id'>[];
-  }
+  order: Partial<Omit<Order, 'order_id' | 'created_at' | 'updated_at'>>,
+  details: Omit<OrderDetail, 'detail_id' | 'order_id'>[]
 ) {
-  const session = await auth();
-  if (!session) {
-    return { success: false, error: 'Unauthorized' };
-  }
-
-  try {
-    const order = await orderRepository.update(
-      id,
-      {
-        customer_id: data.customer_id,
-        customer_name: data.customer_name,
-        order_date: data.order_date,
-        total_amount: data.total_amount,
-        version: data.version,
-      },
-      data.details
-    );
-
-    if (!order) {
-      return { success: false, error: 'Order not found' };
-    }
-
-    revalidatePath('/orders');
-    revalidatePath(`/orders/${id}`);
-    return { success: true, data: order };
-  } catch (error: unknown) {
-    if (error instanceof Error && error.message.includes('更新されています')) {
-      return { success: false, error: error.message };
-    }
-    console.error('Update order error:', error);
-    return { success: false, error: 'Failed to update order' };
-  }
+  return crudHelpers.update(
+    async () => {
+      return await orderRepository.update(id, order, details);
+    },
+    ['/orders', `/orders/${id}`],
+    'Order not found or version mismatch'
+  );
 }
 
 export async function deleteOrder(id: number, version: number) {
-  const session = await auth();
-  if (!session) {
-    return { success: false, error: 'Unauthorized' };
-  }
-
-  try {
-    const success = await orderRepository.delete(id, version);
-    
-    if (!success) {
-      return { success: false, error: 'Order not found or version mismatch' };
-    }
-
-    revalidatePath('/orders');
-    return { success: true };
-  } catch (error) {
-    console.error('Delete order error:', error);
-    return { success: false, error: 'Failed to delete order' };
-  }
+  return crudHelpers.delete(
+    async () => await orderRepository.delete(id, version),
+    ['/orders'],
+    'Order not found or version mismatch'
+  );
 }
-

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 interface CustomerFormProps {
   customer: Customer;
@@ -17,6 +18,7 @@ interface CustomerFormProps {
 
 export default function CustomerForm({ customer }: CustomerFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     customer_name: customer.customer_name,
     phone_number: customer.phone_number || '',
@@ -32,14 +34,25 @@ export default function CustomerForm({ customer }: CustomerFormProps) {
     try {
       const result = await updateCustomer(customer.customer_id, formData);
       if (result.success) {
-        alert('得意先を更新しました');
+        toast({
+          title: "更新完了",
+          description: "得意先を更新しました",
+        });
         router.push('/customers');
       } else {
-        alert(result.error || '更新に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "更新失敗",
+          description: result.error || '更新に失敗しました',
+        });
       }
     } catch (error) {
       console.error('更新エラー:', error);
-      alert('エラーが発生しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: 'エラーが発生しました',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -52,14 +65,25 @@ export default function CustomerForm({ customer }: CustomerFormProps) {
     try {
       const result = await deleteCustomer(customer.customer_id, formData.version);
       if (result.success) {
-        alert('得意先を削除しました');
+        toast({
+          title: "削除完了",
+          description: "得意先を削除しました",
+        });
         router.push('/customers');
       } else {
-        alert(result.error || '削除に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "削除失敗",
+          description: result.error || '削除に失敗しました',
+        });
       }
     } catch (error) {
       console.error('削除エラー:', error);
-      alert('エラーが発生しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: 'エラーが発生しました',
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -98,24 +122,24 @@ export default function CustomerForm({ customer }: CustomerFormProps) {
             </div>
 
             <div className="flex justify-between">
-              <Link href="/customers">
-                <Button type="button" variant="outline">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  戻る
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDelete}
+                disabled={isDeleting || isSubmitting}
+                className="border-red-500 text-red-500 hover:bg-red-50"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isDeleting ? '削除中...' : '削除'}
+              </Button>
 
               <div className="flex gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDelete}
-                  disabled={isDeleting || isSubmitting}
-                  className="border-red-500 text-red-500 hover:bg-red-50"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {isDeleting ? '削除中...' : '削除'}
-                </Button>
+                <Link href="/customers">
+                  <Button type="button" variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    戻る
+                  </Button>
+                </Link>
 
                 <Button
                   type="submit"

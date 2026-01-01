@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CustomerNewForm() {
   const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     customer_name: '',
     phone_number: '',
@@ -25,14 +27,25 @@ export default function CustomerNewForm() {
     try {
       const result = await createCustomer(formData);
       if (result.success) {
-        alert('得意先を登録しました');
+        toast({
+          title: "登録完了",
+          description: "得意先を登録しました",
+        });
         router.push('/customers');
       } else {
-        alert(result.error || '登録に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "登録失敗",
+          description: result.error || '登録に失敗しました',
+        });
       }
     } catch (error) {
       console.error('登録エラー:', error);
-      alert('エラーが発生しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: 'エラーが発生しました',
+      });
     } finally {
       setIsSubmitting(false);
     }

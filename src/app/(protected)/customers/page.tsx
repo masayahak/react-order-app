@@ -7,7 +7,7 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import SearchForm from './SearchForm';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 interface PageProps {
   searchParams: Promise<{ page?: string; keyword?: string }>;

@@ -9,13 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProductNewForm() {
   const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     product_code: '',
     product_name: '',
-    unit_price: 0,
+    unit_price: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -24,16 +26,31 @@ export default function ProductNewForm() {
     setIsSubmitting(true);
 
     try {
-      const result = await createProduct(formData);
+      const result = await createProduct({
+        product_code: formData.product_code,
+        product_name: formData.product_name,
+        unit_price: parseInt(formData.unit_price) || 0,
+      });
       if (result.success) {
-        alert('商品を登録しました');
+        toast({
+          title: "登録完了",
+          description: "商品を登録しました",
+        });
         router.push('/products');
       } else {
-        alert(result.error || '登録に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "登録失敗",
+          description: result.error || '登録に失敗しました',
+        });
       }
     } catch (error) {
       console.error('登録エラー:', error);
-      alert('エラーが発生しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: 'エラーが発生しました',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -82,8 +99,9 @@ export default function ProductNewForm() {
                 id="unit_price"
                 type="number"
                 value={formData.unit_price}
-                onChange={(e) => setFormData({ ...formData, unit_price: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
                 required
+                min="0"
               />
             </div>
 

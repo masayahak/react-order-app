@@ -7,10 +7,10 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import SearchForm from './SearchForm';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 interface PageProps {
-  searchParams: Promise<{ page?: string; dateFrom?: string; dateTo?: string }>;
+  searchParams: Promise<{ page?: string; dateFrom?: string; dateTo?: string; customerName?: string }>;
 }
 
 // 日本時間で昨日と今日の日付を取得
@@ -34,8 +34,9 @@ export default async function OrdersPage({ searchParams }: PageProps) {
   const defaultDates = getDefaultDates();
   const dateFrom = params.dateFrom || defaultDates.dateFrom;
   const dateTo = params.dateTo || defaultDates.dateTo;
+  const customerName = params.customerName;
 
-  const data = await getOrdersPaginated(page, PAGE_SIZE, undefined, dateFrom, dateTo);
+  const data = await getOrdersPaginated(page, PAGE_SIZE, customerName, dateFrom, dateTo);
 
   return (
     <div className="space-y-6">
@@ -49,7 +50,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               </CardDescription>
             </div>
             <Link href="/orders/new">
-              <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md">
+              <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-md">
                 <Plus className="mr-2 h-4 w-4" />
                 新規追加
               </Button>
@@ -57,7 +58,11 @@ export default async function OrdersPage({ searchParams }: PageProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <SearchForm initialDateFrom={dateFrom} initialDateTo={dateTo} />
+          <SearchForm 
+            initialDateFrom={dateFrom} 
+            initialDateTo={dateTo} 
+            initialCustomerName={customerName}
+          />
           
           <Suspense fallback={<TableSkeleton />}>
             <OrdersTable 

@@ -1,19 +1,17 @@
 import { prisma } from '../prisma';
 import { Customer } from '@/types';
-
-export interface PaginatedResult<T> {
-  data: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import { PaginatedResult } from '@/types/pagination';
 
 export class CustomerRepository {
   async getAll(): Promise<Customer[]> {
-    return await prisma.customer.findMany({
+    const customers = await prisma.customer.findMany({
       orderBy: { customer_name: 'asc' },
-    }) as Customer[];
+    });
+    return customers.map(c => ({
+      ...c,
+      created_at: c.created_at.toISOString(),
+      updated_at: c.updated_at.toISOString(),
+    }));
   }
 
   async getPaginated(page: number = 1, pageSize: number = 20, keyword?: string): Promise<PaginatedResult<Customer>> {
@@ -41,7 +39,11 @@ export class CustomerRepository {
     const totalPages = Math.ceil(totalCount / pageSize);
 
     return {
-      data: data as Customer[],
+      data: data.map(c => ({
+        ...c,
+        created_at: c.created_at.toISOString(),
+        updated_at: c.updated_at.toISOString(),
+      })),
       totalCount,
       page,
       pageSize,
@@ -50,13 +52,19 @@ export class CustomerRepository {
   }
 
   async getById(id: number): Promise<Customer | null> {
-    return await prisma.customer.findUnique({
+    const customer = await prisma.customer.findUnique({
       where: { customer_id: id },
-    }) as Customer | null;
+    });
+    if (!customer) return null;
+    return {
+      ...customer,
+      created_at: customer.created_at.toISOString(),
+      updated_at: customer.updated_at.toISOString(),
+    };
   }
 
   async search(keyword: string): Promise<Customer[]> {
-    return await prisma.customer.findMany({
+    const customers = await prisma.customer.findMany({
       where: {
         OR: [
           { customer_name: { contains: keyword } },
@@ -64,38 +72,56 @@ export class CustomerRepository {
         ],
       },
       orderBy: { customer_name: 'asc' },
-    }) as Customer[];
+    });
+    return customers.map(c => ({
+      ...c,
+      created_at: c.created_at.toISOString(),
+      updated_at: c.updated_at.toISOString(),
+    }));
   }
 
-  async create(customer: Omit<Customer, 'customer_id' | 'created_at' | 'updated_at'>): Promise<Customer> {
-    return await prisma.customer.create({
+  async create(customer: Omit<Customer, 'customer_id' | 'version' | 'created_at' | 'updated_at'>): Promise<Customer> {
+    const created = await prisma.customer.create({
       data: {
         customer_name: customer.customer_name,
         phone_number: customer.phone_number || null,
       },
-    }) as Customer;
+    });
+    return {
+      ...created,
+      created_at: created.created_at.toISOString(),
+      updated_at: created.updated_at.toISOString(),
+    };
   }
 
   async update(id: number, customer: Partial<Omit<Customer, 'customer_id' | 'created_at' | 'updated_at'>>): Promise<Customer | null> {
     try {
-      return await prisma.customer.update({
+      const updated = await prisma.customer.update({
         where: { customer_id: id },
         data: {
           ...(customer.customer_name !== undefined && { customer_name: customer.customer_name }),
           ...(customer.phone_number !== undefined && { phone_number: customer.phone_number }),
         },
-      }) as Customer;
+      });
+      return {
+        ...updated,
+        created_at: updated.created_at.toISOString(),
+        updated_at: updated.updated_at.toISOString(),
+      };
     } catch (error) {
       return null;
     }
   }
 
-  async delete(id: number): Promise<boolean> {
+  async delete(id: number, version: number): Promise<boolean> {
     try {
-      await prisma.customer.delete({
-        where: { customer_id: id },
+      const result = await prisma.customer.deleteMany({
+        where: { 
+          customer_id: id,
+          version: version
+        },
       });
-      return true;
+      return result.count > 0;
     } catch (error) {
       return false;
     }

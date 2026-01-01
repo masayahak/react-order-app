@@ -2,8 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { productRepository } from '@/lib/repositories/productRepository';
-import { Product } from '@/types';
-import { revalidatePath } from 'next/cache';
+import { withAuth, crudHelpers } from '@/lib/serverActionHelpers';
 
 export async function getProducts(keyword?: string) {
   const session = await auth();
@@ -20,7 +19,7 @@ export async function getProducts(keyword?: string) {
 
 export async function getProductsPaginated(
   page: number = 1,
-  pageSize: number = 20,
+  pageSize: number = 10,
   keyword?: string
 ) {
   const session = await auth();
@@ -41,18 +40,10 @@ export async function getProductByCode(code: string) {
 }
 
 export async function searchProducts(keyword: string) {
-  const session = await auth();
-  if (!session) {
-    return { success: false, error: 'Unauthorized', data: [] };
-  }
-
-  try {
+  return withAuth(async () => {
     const products = await productRepository.search(keyword);
-    return { success: true, data: products };
-  } catch (error) {
-    console.error('Search products error:', error);
-    return { success: false, error: 'Failed to search products', data: [] };
-  }
+    return products;
+  });
 }
 
 export async function createProduct(data: {
@@ -60,24 +51,16 @@ export async function createProduct(data: {
   product_name: string;
   unit_price: number;
 }) {
-  const session = await auth();
-  if (!session || session.user.role !== 'Administrator') {
-    return { success: false, error: 'Forbidden' };
-  }
-
-  try {
-    const product = await productRepository.create({
-      product_code: data.product_code,
-      product_name: data.product_name,
-      unit_price: data.unit_price || 0,
-    });
-
-    revalidatePath('/products');
-    return { success: true, data: product };
-  } catch (error) {
-    console.error('Create product error:', error);
-    return { success: false, error: 'Failed to create product' };
-  }
+  return crudHelpers.create(
+    async () => {
+      return await productRepository.create({
+        product_code: data.product_code,
+        product_name: data.product_name,
+        unit_price: data.unit_price || 0,
+      });
+    },
+    ['/products']
+  );
 }
 
 export async function updateProduct(
@@ -88,49 +71,23 @@ export async function updateProduct(
     version?: number;
   }
 ) {
-  const session = await auth();
-  if (!session || session.user.role !== 'Administrator') {
-    return { success: false, error: 'Forbidden' };
-  }
-
-  try {
-    const product = await productRepository.update(code, {
-      product_name: data.product_name,
-      unit_price: data.unit_price,
-      version: data.version,
-    });
-
-    if (!product) {
-      return { success: false, error: 'Product not found' };
-    }
-
-    revalidatePath('/products');
-    revalidatePath(`/products/${code}`);
-    return { success: true, data: product };
-  } catch (error) {
-    console.error('Update product error:', error);
-    return { success: false, error: 'Failed to update product' };
-  }
+  return crudHelpers.update(
+    async () => {
+      return await productRepository.update(code, {
+        product_name: data.product_name,
+        unit_price: data.unit_price,
+        version: data.version,
+      });
+    },
+    ['/products', `/products/${code}`],
+    'Product not found'
+  );
 }
 
 export async function deleteProduct(code: string, version: number) {
-  const session = await auth();
-  if (!session || session.user.role !== 'Administrator') {
-    return { success: false, error: 'Forbidden' };
-  }
-
-  try {
-    const success = await productRepository.delete(code, version);
-    
-    if (!success) {
-      return { success: false, error: 'Product not found or version mismatch' };
-    }
-
-    revalidatePath('/products');
-    return { success: true };
-  } catch (error) {
-    console.error('Delete product error:', error);
-    return { success: false, error: 'Failed to delete product' };
-  }
+  return crudHelpers.delete(
+    async () => await productRepository.delete(code, version),
+    ['/products'],
+    'Product not found or version mismatch'
+  );
 }
-

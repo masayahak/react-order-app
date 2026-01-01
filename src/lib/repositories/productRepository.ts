@@ -1,19 +1,17 @@
 import { prisma } from '../prisma';
 import { Product } from '@/types';
-
-export interface PaginatedResult<T> {
-  data: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import { PaginatedResult } from '@/types/pagination';
 
 export class ProductRepository {
   async getAll(): Promise<Product[]> {
-    return await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       orderBy: { product_code: 'asc' },
-    }) as Product[];
+    });
+    return products.map(p => ({
+      ...p,
+      created_at: p.created_at.toISOString(),
+      updated_at: p.updated_at.toISOString(),
+    }));
   }
 
   async getPaginated(page: number = 1, pageSize: number = 20, keyword?: string): Promise<PaginatedResult<Product>> {
@@ -41,7 +39,11 @@ export class ProductRepository {
     const totalPages = Math.ceil(totalCount / pageSize);
 
     return {
-      data: data as Product[],
+      data: data.map(p => ({
+        ...p,
+        created_at: p.created_at.toISOString(),
+        updated_at: p.updated_at.toISOString(),
+      })),
       totalCount,
       page,
       pageSize,
@@ -50,13 +52,19 @@ export class ProductRepository {
   }
 
   async getByCode(code: string): Promise<Product | null> {
-    return await prisma.product.findUnique({
+    const product = await prisma.product.findUnique({
       where: { product_code: code },
-    }) as Product | null;
+    });
+    if (!product) return null;
+    return {
+      ...product,
+      created_at: product.created_at.toISOString(),
+      updated_at: product.updated_at.toISOString(),
+    };
   }
 
   async search(keyword: string): Promise<Product[]> {
-    return await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       where: {
         OR: [
           { product_code: { contains: keyword } },
@@ -64,39 +72,57 @@ export class ProductRepository {
         ],
       },
       orderBy: { product_code: 'asc' },
-    }) as Product[];
+    });
+    return products.map(p => ({
+      ...p,
+      created_at: p.created_at.toISOString(),
+      updated_at: p.updated_at.toISOString(),
+    }));
   }
 
-  async create(product: Omit<Product, 'created_at' | 'updated_at'>): Promise<Product> {
-    return await prisma.product.create({
+  async create(product: Omit<Product, 'version' | 'created_at' | 'updated_at'>): Promise<Product> {
+    const created = await prisma.product.create({
       data: {
         product_code: product.product_code,
         product_name: product.product_name,
         unit_price: product.unit_price,
       },
-    }) as Product;
+    });
+    return {
+      ...created,
+      created_at: created.created_at.toISOString(),
+      updated_at: created.updated_at.toISOString(),
+    };
   }
 
   async update(code: string, product: Partial<Omit<Product, 'product_code' | 'created_at' | 'updated_at'>>): Promise<Product | null> {
     try {
-      return await prisma.product.update({
+      const updated = await prisma.product.update({
         where: { product_code: code },
         data: {
           ...(product.product_name !== undefined && { product_name: product.product_name }),
           ...(product.unit_price !== undefined && { unit_price: product.unit_price }),
         },
-      }) as Product;
+      });
+      return {
+        ...updated,
+        created_at: updated.created_at.toISOString(),
+        updated_at: updated.updated_at.toISOString(),
+      };
     } catch (error) {
       return null;
     }
   }
 
-  async delete(code: string): Promise<boolean> {
+  async delete(code: string, version: number): Promise<boolean> {
     try {
-      await prisma.product.delete({
-        where: { product_code: code },
+      const result = await prisma.product.deleteMany({
+        where: { 
+          product_code: code,
+          version: version
+        },
       });
-      return true;
+      return result.count > 0;
     } catch (error) {
       return false;
     }

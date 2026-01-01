@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
@@ -116,6 +117,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 ml-64 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/30 min-h-screen">
         <div className="p-8">{children}</div>
       </main>
+      <Toaster />
     </div>
   );
 }

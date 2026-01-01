@@ -7,7 +7,7 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import SearchForm from './SearchForm';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 interface PageProps {
   searchParams: Promise<{ page?: string; keyword?: string }>;
@@ -32,7 +32,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
               </CardDescription>
             </div>
             <Link href="/products/new">
-              <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-md">
+              <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-md">
                 <Plus className="mr-2 h-4 w-4" />
                 新規追加
               </Button>

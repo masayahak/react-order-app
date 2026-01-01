@@ -1,28 +1,26 @@
 import { prisma } from '../prisma';
 import { Order, OrderDetail, OrderWithDetails } from '@/types';
-
-export interface PaginatedResult<T> {
-  data: T[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import { PaginatedResult } from '@/types/pagination';
 
 export class OrderRepository {
   async getAll(): Promise<Order[]> {
-    return await prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       orderBy: [
         { order_date: 'desc' },
         { order_id: 'desc' },
       ],
-    }) as Order[];
+    });
+    return orders.map(o => ({
+      ...o,
+      created_at: o.created_at.toISOString(),
+      updated_at: o.updated_at.toISOString(),
+    }));
   }
 
   async getPaginated(
     page: number = 1, 
     pageSize: number = 20, 
-    keyword?: string,
+    customerName?: string,
     dateFrom?: string,
     dateTo?: string
   ): Promise<PaginatedResult<Order>> {
@@ -30,8 +28,8 @@ export class OrderRepository {
     
     const conditions: any[] = [];
     
-    if (keyword) {
-      conditions.push({ customer_name: { contains: keyword } });
+    if (customerName) {
+      conditions.push({ customer_name: { contains: customerName } });
     }
     
     if (dateFrom) {
@@ -60,7 +58,11 @@ export class OrderRepository {
     const totalPages = Math.ceil(totalCount / pageSize);
 
     return {
-      data: data as Order[],
+      data: data.map(o => ({
+        ...o,
+        created_at: o.created_at.toISOString(),
+        updated_at: o.updated_at.toISOString(),
+      })),
       totalCount,
       page,
       pageSize,
@@ -82,11 +84,15 @@ export class OrderRepository {
       return null;
     }
 
-    return order as OrderWithDetails;
+    return {
+      ...order,
+      created_at: order.created_at.toISOString(),
+      updated_at: order.updated_at.toISOString(),
+    };
   }
 
   async search(keyword: string): Promise<Order[]> {
-    return await prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       where: {
         customer_name: { contains: keyword },
       },
@@ -94,7 +100,12 @@ export class OrderRepository {
         { order_date: 'desc' },
         { order_id: 'desc' },
       ],
-    }) as Order[];
+    });
+    return orders.map(o => ({
+      ...o,
+      created_at: o.created_at.toISOString(),
+      updated_at: o.updated_at.toISOString(),
+    }));
   }
 
   async create(
@@ -125,7 +136,11 @@ export class OrderRepository {
       },
     });
 
-    return createdOrder as OrderWithDetails;
+    return {
+      ...createdOrder,
+      created_at: createdOrder.created_at.toISOString(),
+      updated_at: createdOrder.updated_at.toISOString(),
+    };
   }
 
   async update(
@@ -172,18 +187,25 @@ export class OrderRepository {
         },
       });
 
-      return updatedOrder as OrderWithDetails;
+      return {
+        ...updatedOrder,
+        created_at: updatedOrder.created_at.toISOString(),
+        updated_at: updatedOrder.updated_at.toISOString(),
+      };
     } catch (error) {
       return null;
     }
   }
 
-  async delete(id: number): Promise<boolean> {
+  async delete(id: number, version: number): Promise<boolean> {
     try {
-      await prisma.order.delete({
-        where: { order_id: id },
+      const result = await prisma.order.deleteMany({
+        where: { 
+          order_id: id,
+          version: version
+        },
       });
-      return true;
+      return result.count > 0;
     } catch (error) {
       return false;
     }

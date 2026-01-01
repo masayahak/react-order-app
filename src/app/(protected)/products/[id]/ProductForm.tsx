@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductFormProps {
   product: Product;
@@ -17,9 +18,10 @@ interface ProductFormProps {
 
 export default function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     product_name: product.product_name,
-    unit_price: product.unit_price,
+    unit_price: product.unit_price.toString(),
     version: product.version,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,16 +32,31 @@ export default function ProductForm({ product }: ProductFormProps) {
     setIsSubmitting(true);
 
     try {
-      const result = await updateProduct(product.product_code, formData);
+      const result = await updateProduct(product.product_code, {
+        product_name: formData.product_name,
+        unit_price: parseInt(formData.unit_price) || 0,
+        version: formData.version,
+      });
       if (result.success) {
-        alert('商品を更新しました');
+        toast({
+          title: "更新完了",
+          description: "商品を更新しました",
+        });
         router.push('/products');
       } else {
-        alert(result.error || '更新に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "更新失敗",
+          description: result.error || '更新に失敗しました',
+        });
       }
     } catch (error) {
       console.error('更新エラー:', error);
-      alert('エラーが発生しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: 'エラーが発生しました',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -52,14 +69,25 @@ export default function ProductForm({ product }: ProductFormProps) {
     try {
       const result = await deleteProduct(product.product_code, formData.version);
       if (result.success) {
-        alert('商品を削除しました');
+        toast({
+          title: "削除完了",
+          description: "商品を削除しました",
+        });
         router.push('/products');
       } else {
-        alert(result.error || '削除に失敗しました');
+        toast({
+          variant: "destructive",
+          title: "削除失敗",
+          description: result.error || '削除に失敗しました',
+        });
       }
     } catch (error) {
       console.error('削除エラー:', error);
-      alert('エラーが発生しました');
+      toast({
+        variant: "destructive",
+        title: "エラー",
+        description: 'エラーが発生しました',
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -106,30 +134,31 @@ export default function ProductForm({ product }: ProductFormProps) {
                 id="unit_price"
                 type="number"
                 value={formData.unit_price}
-                onChange={(e) => setFormData({ ...formData, unit_price: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
                 required
+                min="0"
               />
             </div>
 
             <div className="flex justify-between">
-              <Link href="/products">
-                <Button type="button" variant="outline">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  戻る
-                </Button>
-              </Link>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDelete}
+                disabled={isDeleting || isSubmitting}
+                className="border-red-500 text-red-500 hover:bg-red-50"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isDeleting ? '削除中...' : '削除'}
+              </Button>
 
               <div className="flex gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDelete}
-                  disabled={isDeleting || isSubmitting}
-                  className="border-red-500 text-red-500 hover:bg-red-50"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {isDeleting ? '削除中...' : '削除'}
-                </Button>
+                <Link href="/products">
+                  <Button type="button" variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    戻る
+                  </Button>
+                </Link>
 
                 <Button
                   type="submit"
