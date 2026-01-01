@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Customer } from '@/types';
 import { updateCustomer, deleteCustomer } from '@/actions/customers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ interface CustomerFormProps {
 
 export default function CustomerForm({ customer }: CustomerFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     customer_name: customer.customer_name,
@@ -26,6 +27,20 @@ export default function CustomerForm({ customer }: CustomerFormProps) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const getBackUrl = () => {
+    const params = new URLSearchParams();
+    const keyword = searchParams.get('keyword');
+    const page = searchParams.get('page');
+    if (keyword) {
+      params.set('keyword', keyword);
+    }
+    if (page && page !== '1') {
+      params.set('page', page);
+    }
+    const queryString = params.toString();
+    return `/customers${queryString ? `?${queryString}` : ''}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +53,7 @@ export default function CustomerForm({ customer }: CustomerFormProps) {
           title: "更新完了",
           description: "得意先を更新しました",
         });
-        router.push('/customers');
+        router.push(getBackUrl());
       } else {
         toast({
           variant: "destructive",
@@ -69,7 +84,7 @@ export default function CustomerForm({ customer }: CustomerFormProps) {
           title: "削除完了",
           description: "得意先を削除しました",
         });
-        router.push('/customers');
+        router.push(getBackUrl());
       } else {
         toast({
           variant: "destructive",
@@ -134,7 +149,7 @@ export default function CustomerForm({ customer }: CustomerFormProps) {
               </Button>
 
               <div className="flex gap-4">
-                <Link href="/customers">
+                <Link href={getBackUrl()}>
                   <Button type="button" variant="outline">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     戻る

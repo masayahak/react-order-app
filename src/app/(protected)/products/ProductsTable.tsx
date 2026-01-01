@@ -28,6 +28,8 @@ export default function ProductsTable({
       width: 'w-[20%]',
       sortable: true,
       sortField: 'product_code',
+      align: 'left',
+      headerAlign: 'left',
       render: (product) => product.product_code,
     },
     {
@@ -36,6 +38,8 @@ export default function ProductsTable({
       width: 'w-[40%]',
       sortable: true,
       sortField: 'product_name',
+      align: 'left',
+      headerAlign: 'left',
       render: (product) => product.product_name,
     },
     {

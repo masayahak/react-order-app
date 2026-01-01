@@ -272,11 +272,11 @@ export default function OrderNewForm() {
                   <thead className="bg-muted">
                     <tr>
                       <th className="p-2 text-center w-12"></th>
-                      <th className="p-2 text-center w-32">商品コード</th>
-                      <th className="p-2 text-center w-48">商品名</th>
-                      <th className="p-2 text-center w-28">単価</th>
-                      <th className="p-2 text-center w-24">数量</th>
-                      <th className="p-2 text-center w-32">金額</th>
+                      <th className="p-2 text-left w-32">商品コード</th>
+                      <th className="p-2 text-left w-48">商品名</th>
+                      <th className="p-2 text-right w-28">単価</th>
+                      <th className="p-2 text-right w-24">数量</th>
+                      <th className="p-2 text-right w-32">金額</th>
                     </tr>
                   </thead>
                   <tbody>

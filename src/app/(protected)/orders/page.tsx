@@ -73,6 +73,7 @@ export default async function OrdersPage({ searchParams }: PageProps) {
               pageSize={PAGE_SIZE}
               dateFrom={dateFrom}
               dateTo={dateTo}
+              customerName={customerName}
             />
           </Suspense>
         </CardContent>

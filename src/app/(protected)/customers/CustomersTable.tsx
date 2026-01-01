@@ -4,6 +4,7 @@ import { Customer } from '@/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import DataTable, { ColumnDef } from '@/components/DataTable';
+import { useSearchParams } from 'next/navigation';
 
 interface CustomersTableProps {
   data: Customer[];
@@ -20,7 +21,21 @@ export default function CustomersTable({
   totalPages,
   totalCount,
   pageSize,
+  keyword,
 }: CustomersTableProps) {
+  const searchParams = useSearchParams();
+  
+  const getDetailUrl = (customerId: number) => {
+    const params = new URLSearchParams();
+    if (keyword) {
+      params.set('keyword', keyword);
+    }
+    if (currentPage > 1) {
+      params.set('page', currentPage.toString());
+    }
+    const queryString = params.toString();
+    return `/customers/${customerId}${queryString ? `?${queryString}` : ''}`;
+  };
   const columns: ColumnDef<Customer>[] = [
     {
       key: 'customer_name',
@@ -28,6 +43,8 @@ export default function CustomersTable({
       width: 'w-[60%]',
       sortable: true,
       sortField: 'customer_name',
+      align: 'left',
+      headerAlign: 'left',
       render: (customer) => customer.customer_name,
     },
     {
@@ -36,6 +53,8 @@ export default function CustomersTable({
       width: 'w-[25%]',
       sortable: true,
       sortField: 'phone_number',
+      align: 'left',
+      headerAlign: 'left',
       render: (customer) => customer.phone_number || '',
     },
     {
@@ -45,7 +64,7 @@ export default function CustomersTable({
       align: 'center',
       headerAlign: 'center',
       render: (customer) => (
-        <Link href={`/customers/${customer.customer_id}`}>
+        <Link href={getDetailUrl(customer.customer_id)}>
           <Button variant="outline" size="sm" className="border-blue-500 text-blue-600 hover:bg-blue-50">
             詳細
           </Button>

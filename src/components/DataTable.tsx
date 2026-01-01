@@ -112,14 +112,16 @@ export default function DataTable<T extends Record<string, any>>({
     }
   };
 
-  const getHeaderAlignClass = (headerAlign?: 'left' | 'center' | 'right') => {
-    switch (headerAlign) {
+  const getHeaderAlignClass = (headerAlign?: 'left' | 'center' | 'right', align?: 'left' | 'center' | 'right') => {
+    // headerAlignが指定されていない場合はalignを参照
+    const effectiveAlign = headerAlign ?? align;
+    switch (effectiveAlign) {
       case 'center':
         return 'justify-center';
       case 'right':
         return 'justify-end';
       default:
-        return '';
+        return 'justify-start';
     }
   };
 
@@ -129,25 +131,29 @@ export default function DataTable<T extends Record<string, any>>({
         <Table>
           <TableHeader>
             <TableRow>
-              {columns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  className={`${column.width || ''} ${getAlignClass(column.headerAlign)}`}
-                >
-                  {column.sortable && column.sortField ? (
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort(column.sortField!, column.key === 'order_date' ? 'desc' : 'asc')}
-                      className={`flex items-center ${getHeaderAlignClass(column.headerAlign)} w-full`}
-                    >
-                      {column.header}
-                      <SortIcon field={column.sortField} />
-                    </Button>
-                  ) : (
-                    column.header
-                  )}
-                </TableHead>
-              ))}
+              {columns.map((column) => {
+                // headerAlignが指定されていない場合はalignを参照
+                const effectiveHeaderAlign = column.headerAlign ?? column.align;
+                return (
+                  <TableHead
+                    key={column.key}
+                    className={`${column.width || ''} ${getAlignClass(effectiveHeaderAlign)}`}
+                  >
+                    {column.sortable && column.sortField ? (
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleSort(column.sortField!, column.key === 'order_date' ? 'desc' : 'asc')}
+                        className={`flex items-center ${getHeaderAlignClass(column.headerAlign, column.align)} w-full`}
+                      >
+                        {column.header}
+                        <SortIcon field={column.sortField} />
+                      </Button>
+                    ) : (
+                      column.header
+                    )}
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>

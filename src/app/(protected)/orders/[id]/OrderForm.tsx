@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -41,9 +41,32 @@ interface OrderFormProps {
 
 export default function OrderForm({ order }: OrderFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const getBackUrl = () => {
+    const params = new URLSearchParams();
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
+    const customerName = searchParams.get('customerName');
+    const page = searchParams.get('page');
+    if (dateFrom) {
+      params.set('dateFrom', dateFrom);
+    }
+    if (dateTo) {
+      params.set('dateTo', dateTo);
+    }
+    if (customerName) {
+      params.set('customerName', customerName);
+    }
+    if (page && page !== '1') {
+      params.set('page', page);
+    }
+    const queryString = params.toString();
+    return `/orders${queryString ? `?${queryString}` : ''}`;
+  };
   const [details, setDetails] = useState<OrderDetail[]>(
     order.details.map((detail) => ({
       product_code: detail.product_code,
@@ -189,7 +212,7 @@ export default function OrderForm({ order }: OrderFormProps) {
           title: "更新完了",
           description: "受注を更新しました",
         });
-        router.push('/orders');
+        router.push(getBackUrl());
       } else {
         toast({
           variant: "destructive",
@@ -221,7 +244,7 @@ export default function OrderForm({ order }: OrderFormProps) {
           title: "削除完了",
           description: "受注を削除しました",
         });
-        router.push('/orders');
+        router.push(getBackUrl());
       } else {
         toast({
           variant: "destructive",
@@ -313,11 +336,11 @@ export default function OrderForm({ order }: OrderFormProps) {
                   <thead className="bg-muted">
                     <tr>
                       <th className="p-2 text-center w-12"></th>
-                      <th className="p-2 text-center w-32">商品コード</th>
-                      <th className="p-2 text-center w-48">商品名</th>
-                      <th className="p-2 text-center w-28">単価</th>
-                      <th className="p-2 text-center w-24">数量</th>
-                      <th className="p-2 text-center w-32">金額</th>
+                      <th className="p-2 text-left w-32">商品コード</th>
+                      <th className="p-2 text-left w-48">商品名</th>
+                      <th className="p-2 text-right w-28">単価</th>
+                      <th className="p-2 text-right w-24">数量</th>
+                      <th className="p-2 text-right w-32">金額</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -411,7 +434,7 @@ export default function OrderForm({ order }: OrderFormProps) {
               </Button>
 
               <div className="flex gap-4">
-                <Link href="/orders">
+                <Link href={getBackUrl()}>
                   <Button type="button" variant="outline">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     戻る
