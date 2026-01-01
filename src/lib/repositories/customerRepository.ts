@@ -1,4 +1,4 @@
-import db from '../db';
+import { prisma } from '../prisma';
 import { Customer } from '@/types';
 
 export interface PaginatedResult<T> {
@@ -10,33 +10,38 @@ export interface PaginatedResult<T> {
 }
 
 export class CustomerRepository {
-  getAll(): Customer[] {
-    return db().prepare('SELECT * FROM customers ORDER BY customer_name').all() as Customer[];
+  async getAll(): Promise<Customer[]> {
+    return await prisma.customer.findMany({
+      orderBy: { customer_name: 'asc' },
+    }) as Customer[];
   }
 
-  getPaginated(page: number = 1, pageSize: number = 20, keyword?: string): PaginatedResult<Customer> {
-    const offset = (page - 1) * pageSize;
-    let countQuery = 'SELECT COUNT(*) as count FROM customers';
-    let dataQuery = 'SELECT * FROM customers';
-    const params: (string | number)[] = [];
+  async getPaginated(page: number = 1, pageSize: number = 20, keyword?: string): Promise<PaginatedResult<Customer>> {
+    const skip = (page - 1) * pageSize;
+    
+    const where = keyword
+      ? {
+          OR: [
+            { customer_name: { contains: keyword } },
+            { phone_number: { contains: keyword } },
+          ],
+        }
+      : undefined;
 
-    if (keyword) {
-      const searchTerm = `%${keyword}%`;
-      countQuery += ' WHERE customer_name LIKE ? OR phone_number LIKE ?';
-      dataQuery += ' WHERE customer_name LIKE ? OR phone_number LIKE ?';
-      params.push(searchTerm, searchTerm);
-    }
+    const [totalCount, data] = await Promise.all([
+      prisma.customer.count({ where }),
+      prisma.customer.findMany({
+        where,
+        orderBy: { customer_name: 'asc' },
+        skip,
+        take: pageSize,
+      }),
+    ]);
 
-    dataQuery += ' ORDER BY customer_name LIMIT ? OFFSET ?';
-
-    const countResult = db().prepare(countQuery).get(...params) as { count: number };
-    const totalCount = countResult.count;
     const totalPages = Math.ceil(totalCount / pageSize);
 
-    const data = db().prepare(dataQuery).all(...params, pageSize, offset) as Customer[];
-
     return {
-      data,
+      data: data as Customer[],
       totalCount,
       page,
       pageSize,
@@ -44,55 +49,57 @@ export class CustomerRepository {
     };
   }
 
-  getById(id: number): Customer | null {
-    return (db().prepare('SELECT * FROM customers WHERE customer_id = ?').get(id) as Customer) || null;
+  async getById(id: number): Promise<Customer | null> {
+    return await prisma.customer.findUnique({
+      where: { customer_id: id },
+    }) as Customer | null;
   }
 
-  search(keyword: string): Customer[] {
-    const searchTerm = `%${keyword}%`;
-    return db()
-      .prepare(
-        'SELECT * FROM customers WHERE customer_name LIKE ? OR phone_number LIKE ? ORDER BY customer_name'
-      )
-      .all(searchTerm, searchTerm) as Customer[];
+  async search(keyword: string): Promise<Customer[]> {
+    return await prisma.customer.findMany({
+      where: {
+        OR: [
+          { customer_name: { contains: keyword } },
+          { phone_number: { contains: keyword } },
+        ],
+      },
+      orderBy: { customer_name: 'asc' },
+    }) as Customer[];
   }
 
-  create(customer: Omit<Customer, 'customer_id' | 'created_at' | 'updated_at'>): Customer {
-    const result = db()
-      .prepare('INSERT INTO customers (customer_name, phone_number) VALUES (?, ?)')
-      .run(customer.customer_name, customer.phone_number || null);
-    return this.getById(result.lastInsertRowid as number)!;
+  async create(customer: Omit<Customer, 'customer_id' | 'created_at' | 'updated_at'>): Promise<Customer> {
+    return await prisma.customer.create({
+      data: {
+        customer_name: customer.customer_name,
+        phone_number: customer.phone_number || null,
+      },
+    }) as Customer;
   }
 
-  update(id: number, customer: Partial<Omit<Customer, 'customer_id' | 'created_at' | 'updated_at'>>): Customer | null {
-    const updates: string[] = [];
-    const values: (string | number | null)[] = [];
-
-    if (customer.customer_name !== undefined) {
-      updates.push('customer_name = ?');
-      values.push(customer.customer_name);
+  async update(id: number, customer: Partial<Omit<Customer, 'customer_id' | 'created_at' | 'updated_at'>>): Promise<Customer | null> {
+    try {
+      return await prisma.customer.update({
+        where: { customer_id: id },
+        data: {
+          ...(customer.customer_name !== undefined && { customer_name: customer.customer_name }),
+          ...(customer.phone_number !== undefined && { phone_number: customer.phone_number }),
+        },
+      }) as Customer;
+    } catch (error) {
+      return null;
     }
-    if (customer.phone_number !== undefined) {
-      updates.push('phone_number = ?');
-      values.push(customer.phone_number);
-    }
-
-    if (updates.length === 0) {
-      return this.getById(id);
-    }
-
-    updates.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(id);
-
-    db().prepare(`UPDATE customers SET ${updates.join(', ')} WHERE customer_id = ?`).run(...values);
-    return this.getById(id);
   }
 
-  delete(id: number): boolean {
-    const result = db().prepare('DELETE FROM customers WHERE customer_id = ?').run(id);
-    return result.changes > 0;
+  async delete(id: number): Promise<boolean> {
+    try {
+      await prisma.customer.delete({
+        where: { customer_id: id },
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
 
 export const customerRepository = new CustomerRepository();
-

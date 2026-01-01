@@ -3,6 +3,17 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,10 +21,12 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     const result = await signIn("credentials", {
       username,
@@ -23,6 +36,7 @@ export default function LoginPage() {
 
     if (result?.error) {
       setError("ユーザー名またはパスワードが正しくありません");
+      setLoading(false);
     } else {
       const returnUrl = searchParams.get("callbackUrl") || "/orders";
       router.push(returnUrl);
@@ -35,6 +49,7 @@ export default function LoginPage() {
     testPassword: string
   ) => {
     setError("");
+    setLoading(true);
     setUsername(testUsername);
     setPassword(testPassword);
 
@@ -46,6 +61,7 @@ export default function LoginPage() {
 
     if (result?.error) {
       setError("ログインに失敗しました");
+      setLoading(false);
     } else {
       const returnUrl = searchParams.get("callbackUrl") || "/orders";
       router.push(returnUrl);
@@ -54,88 +70,87 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-2xl shadow-xl">
-        <div>
-          <h2 className="text-center text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+      <Card className="w-full max-w-md border-t-4 border-t-blue-500 shadow-2xl">
+        <CardHeader className="space-y-1 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             受注管理システム
-          </h2>
-          <p className="mt-3 text-center text-sm text-gray-600">
+          </CardTitle>
+          <CardDescription className="text-center text-blue-700">
             ログインしてください
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
-                ユーザー名
-              </label>
-              <input
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="username">ユーザー名</Label>
+              <Input
                 id="username"
                 name="username"
                 type="text"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
               />
             </div>
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                パスワード
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="password">パスワード</Label>
+              <Input
                 id="password"
                 name="password"
                 type="password"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
             </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md" 
+              disabled={loading}
             >
-              ログイン
-            </button>
-          </div>
-          <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
-            <p className="font-semibold mb-3">テストログイン:</p>
-            <div className="flex gap-2">
-              <button
+              {loading ? "ログイン中..." : "ログイン"}
+            </Button>
+          </form>
+
+          <Separator className="my-6" />
+
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-muted-foreground text-center">
+              テストログイン
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => handleTestLogin("admin", "admin123")}
-                className="flex-1 py-2 px-3 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-sm font-medium"
+                disabled={loading}
+                className="w-full"
               >
-                管理者でログイン
-              </button>
-              <button
+                管理者
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => handleTestLogin("user", "user123")}
-                className="flex-1 py-2 px-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
+                disabled={loading}
+                className="w-full"
               >
-                一般でログイン
-              </button>
+                一般ユーザー
+              </Button>
             </div>
           </div>
-        </form>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+

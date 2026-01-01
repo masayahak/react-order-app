@@ -1,4 +1,4 @@
-import db from '../db';
+import { prisma } from '../prisma';
 import { Order, OrderDetail, OrderWithDetails } from '@/types';
 
 export interface PaginatedResult<T> {
@@ -10,55 +10,57 @@ export interface PaginatedResult<T> {
 }
 
 export class OrderRepository {
-  getAll(): Order[] {
-    return db().prepare('SELECT * FROM orders ORDER BY order_date DESC, order_id DESC').all() as Order[];
+  async getAll(): Promise<Order[]> {
+    return await prisma.order.findMany({
+      orderBy: [
+        { order_date: 'desc' },
+        { order_id: 'desc' },
+      ],
+    }) as Order[];
   }
 
-  getPaginated(
+  async getPaginated(
     page: number = 1, 
     pageSize: number = 20, 
     keyword?: string,
     dateFrom?: string,
     dateTo?: string
-  ): PaginatedResult<Order> {
-    const offset = (page - 1) * pageSize;
-    let countQuery = 'SELECT COUNT(*) as count FROM orders';
-    let dataQuery = 'SELECT * FROM orders';
-    const conditions: string[] = [];
-    const params: (string | number)[] = [];
-
+  ): Promise<PaginatedResult<Order>> {
+    const skip = (page - 1) * pageSize;
+    
+    const conditions: any[] = [];
+    
     if (keyword) {
-      const searchTerm = `%${keyword}%`;
-      conditions.push('customer_name LIKE ?');
-      params.push(searchTerm);
+      conditions.push({ customer_name: { contains: keyword } });
     }
-
+    
     if (dateFrom) {
-      conditions.push('order_date >= ?');
-      params.push(dateFrom);
+      conditions.push({ order_date: { gte: dateFrom } });
     }
-
+    
     if (dateTo) {
-      conditions.push('order_date <= ?');
-      params.push(dateTo);
+      conditions.push({ order_date: { lte: dateTo } });
     }
+    
+    const where = conditions.length > 0 ? { AND: conditions } : undefined;
 
-    if (conditions.length > 0) {
-      const whereClause = ' WHERE ' + conditions.join(' AND ');
-      countQuery += whereClause;
-      dataQuery += whereClause;
-    }
+    const [totalCount, data] = await Promise.all([
+      prisma.order.count({ where }),
+      prisma.order.findMany({
+        where,
+        orderBy: [
+          { order_date: 'desc' },
+          { order_id: 'desc' },
+        ],
+        skip,
+        take: pageSize,
+      }),
+    ]);
 
-    dataQuery += ' ORDER BY order_date DESC, order_id DESC LIMIT ? OFFSET ?';
-
-    const countResult = db().prepare(countQuery).get(...params) as { count: number };
-    const totalCount = countResult.count;
     const totalPages = Math.ceil(totalCount / pageSize);
 
-    const data = db().prepare(dataQuery).all(...params, pageSize, offset) as Order[];
-
     return {
-      data,
+      data: data as Order[],
       totalCount,
       page,
       pageSize,
@@ -66,136 +68,126 @@ export class OrderRepository {
     };
   }
 
-  getById(id: number): OrderWithDetails | null {
-    const order = db().prepare('SELECT * FROM orders WHERE order_id = ?').get(id) as Order | null;
+  async getById(id: number): Promise<OrderWithDetails | null> {
+    const order = await prisma.order.findUnique({
+      where: { order_id: id },
+      include: {
+        details: {
+          orderBy: { detail_id: 'asc' },
+        },
+      },
+    });
+
     if (!order) {
       return null;
     }
 
-    const details = db()
-      .prepare('SELECT * FROM order_details WHERE order_id = ? ORDER BY detail_id')
-      .all(id) as OrderDetail[];
-
-    return {
-      ...order,
-      details,
-    };
+    return order as OrderWithDetails;
   }
 
-  search(keyword: string): Order[] {
-    const searchTerm = `%${keyword}%`;
-    return db()
-      .prepare('SELECT * FROM orders WHERE customer_name LIKE ? ORDER BY order_date DESC, order_id DESC')
-      .all(searchTerm) as Order[];
+  async search(keyword: string): Promise<Order[]> {
+    return await prisma.order.findMany({
+      where: {
+        customer_name: { contains: keyword },
+      },
+      orderBy: [
+        { order_date: 'desc' },
+        { order_id: 'desc' },
+      ],
+    }) as Order[];
   }
 
-  create(
+  async create(
     order: Omit<Order, 'order_id' | 'version' | 'created_at' | 'updated_at'>,
     details: Omit<OrderDetail, 'detail_id' | 'order_id'>[]
-  ): OrderWithDetails {
-    const database = db();
-    const insertOrder = database.prepare(
-      'INSERT INTO orders (customer_id, customer_name, order_date, total_amount, created_by) VALUES (?, ?, ?, ?, ?)'
-    );
-    const insertDetail = database.prepare(
-      'INSERT INTO order_details (order_id, product_code, product_name, quantity, unit_price, amount) VALUES (?, ?, ?, ?, ?, ?)'
-    );
-
-    const transaction = database.transaction(() => {
-      const orderResult = insertOrder.run(
-        order.customer_id,
-        order.customer_name,
-        order.order_date,
-        order.total_amount,
-        order.created_by || null
-      );
-      const orderId = orderResult.lastInsertRowid as number;
-
-      for (const detail of details) {
-        insertDetail.run(
-          orderId,
-          detail.product_code,
-          detail.product_name,
-          detail.quantity,
-          detail.unit_price,
-          detail.amount
-        );
-      }
-
-      return orderId;
+  ): Promise<OrderWithDetails> {
+    const createdOrder = await prisma.order.create({
+      data: {
+        customer_id: order.customer_id,
+        customer_name: order.customer_name,
+        order_date: order.order_date,
+        total_amount: order.total_amount,
+        created_by: order.created_by || null,
+        details: {
+          create: details.map(detail => ({
+            product_code: detail.product_code,
+            product_name: detail.product_name,
+            quantity: detail.quantity,
+            unit_price: detail.unit_price,
+            amount: detail.amount,
+          })),
+        },
+      },
+      include: {
+        details: {
+          orderBy: { detail_id: 'asc' },
+        },
+      },
     });
 
-    const orderId = transaction();
-    return this.getById(orderId)!;
+    return createdOrder as OrderWithDetails;
   }
 
-  update(
+  async update(
     id: number,
     order: Partial<Omit<Order, 'order_id' | 'created_at' | 'updated_at'>>,
     details?: Omit<OrderDetail, 'detail_id' | 'order_id'>[]
-  ): OrderWithDetails | null {
-    const current = this.getById(id);
+  ): Promise<OrderWithDetails | null> {
+    // 楽観的排他制御
+    const current = await this.getById(id);
     if (!current) {
       return null;
     }
 
-    // 楽観的排他制御
     if (order.version !== undefined && order.version !== current.version) {
       throw new Error('他のユーザーによって更新されています。最新のデータを取得してください。');
     }
 
-    const database = db();
-    const updates: string[] = [];
-    const values: (string | number | null)[] = [];
-
-    if (order.customer_id !== undefined) {
-      updates.push('customer_id = ?');
-      values.push(order.customer_id);
-    }
-    if (order.customer_name !== undefined) {
-      updates.push('customer_name = ?');
-      values.push(order.customer_name);
-    }
-    if (order.order_date !== undefined) {
-      updates.push('order_date = ?');
-      values.push(order.order_date);
-    }
-    if (order.total_amount !== undefined) {
-      updates.push('total_amount = ?');
-      values.push(order.total_amount);
-    }
-
-    if (updates.length > 0) {
-      updates.push('version = version + 1');
-      updates.push('updated_at = CURRENT_TIMESTAMP');
-      values.push(id);
-      database.prepare(`UPDATE orders SET ${updates.join(', ')} WHERE order_id = ?`).run(...values);
-    }
-
-    if (details) {
-      const deleteDetails = database.prepare('DELETE FROM order_details WHERE order_id = ?');
-      const insertDetail = database.prepare(
-        'INSERT INTO order_details (order_id, product_code, product_name, quantity, unit_price, amount) VALUES (?, ?, ?, ?, ?, ?)'
-      );
-
-      const transaction = database.transaction(() => {
-        deleteDetails.run(id);
-        for (const detail of details) {
-          insertDetail.run(id, detail.product_code, detail.product_name, detail.quantity, detail.unit_price, detail.amount);
-        }
+    try {
+      const updatedOrder = await prisma.order.update({
+        where: { order_id: id },
+        data: {
+          ...(order.customer_id !== undefined && { customer_id: order.customer_id }),
+          ...(order.customer_name !== undefined && { customer_name: order.customer_name }),
+          ...(order.order_date !== undefined && { order_date: order.order_date }),
+          ...(order.total_amount !== undefined && { total_amount: order.total_amount }),
+          version: { increment: 1 },
+          ...(details && {
+            details: {
+              deleteMany: {},
+              create: details.map(detail => ({
+                product_code: detail.product_code,
+                product_name: detail.product_name,
+                quantity: detail.quantity,
+                unit_price: detail.unit_price,
+                amount: detail.amount,
+              })),
+            },
+          }),
+        },
+        include: {
+          details: {
+            orderBy: { detail_id: 'asc' },
+          },
+        },
       });
 
-      transaction();
+      return updatedOrder as OrderWithDetails;
+    } catch (error) {
+      return null;
     }
-
-    return this.getById(id);
   }
 
-  delete(id: number): boolean {
-    const result = db().prepare('DELETE FROM orders WHERE order_id = ?').run(id);
-    return result.changes > 0;
+  async delete(id: number): Promise<boolean> {
+    try {
+      await prisma.order.delete({
+        where: { order_id: id },
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
 
 export const orderRepository = new OrderRepository();
-

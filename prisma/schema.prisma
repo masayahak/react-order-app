@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id       Int      @id @default(autoincrement())
+  username      String   @unique
+  password_hash String
+  role          String   @default("User")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+
+  @@map("users")
+}
+
+model Customer {
+  customer_id   Int      @id @default(autoincrement())
+  customer_name String
+  phone_number  String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+
+  @@map("customers")
+}
+
+model Product {
+  product_code String   @id
+  product_name String
+  unit_price   Int      @default(0)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now()) @updatedAt
+
+  @@map("products")
+}
+
+model Order {
+  order_id      Int      @id @default(autoincrement())
+  customer_id   Int
+  customer_name String
+  order_date    String
+  total_amount  Int      @default(0)
+  version       Int      @default(1)
+  created_by    Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+
+  details OrderDetail[]
+
+  @@map("orders")
+}
+
+model OrderDetail {
+  detail_id    Int    @id @default(autoincrement())
+  order_id     Int
+  product_code String
+  product_name String
+  quantity     Int    @default(1)
+  unit_price   Int    @default(0)
+  amount       Int    @default(0)
+
+  order Order @relation(fields: [order_id], references: [order_id], onDelete: Cascade)
+
+  @@map("order_details")
+}

@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import db from './db';
+import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -16,15 +16,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
-          const database = db();
-          const user = database
-            .prepare('SELECT user_id, username, password_hash, role FROM users WHERE username = ?')
-            .get(credentials.username as string) as {
-            user_id: number;
-            username: string;
-            password_hash: string;
-            role: string;
-          } | undefined;
+          const user = await prisma.user.findUnique({
+            where: { username: credentials.username as string },
+            select: {
+              user_id: true,
+              username: true,
+              password_hash: true,
+              role: true,
+            },
+          });
 
           if (!user) {
             return null;

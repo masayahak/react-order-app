@@ -1,4 +1,4 @@
-import db from '../db';
+import { prisma } from '../prisma';
 import { Product } from '@/types';
 
 export interface PaginatedResult<T> {
@@ -10,33 +10,38 @@ export interface PaginatedResult<T> {
 }
 
 export class ProductRepository {
-  getAll(): Product[] {
-    return db().prepare('SELECT * FROM products ORDER BY product_code').all() as Product[];
+  async getAll(): Promise<Product[]> {
+    return await prisma.product.findMany({
+      orderBy: { product_code: 'asc' },
+    }) as Product[];
   }
 
-  getPaginated(page: number = 1, pageSize: number = 20, keyword?: string): PaginatedResult<Product> {
-    const offset = (page - 1) * pageSize;
-    let countQuery = 'SELECT COUNT(*) as count FROM products';
-    let dataQuery = 'SELECT * FROM products';
-    const params: (string | number)[] = [];
+  async getPaginated(page: number = 1, pageSize: number = 20, keyword?: string): Promise<PaginatedResult<Product>> {
+    const skip = (page - 1) * pageSize;
+    
+    const where = keyword
+      ? {
+          OR: [
+            { product_code: { contains: keyword } },
+            { product_name: { contains: keyword } },
+          ],
+        }
+      : undefined;
 
-    if (keyword) {
-      const searchTerm = `%${keyword}%`;
-      countQuery += ' WHERE product_code LIKE ? OR product_name LIKE ?';
-      dataQuery += ' WHERE product_code LIKE ? OR product_name LIKE ?';
-      params.push(searchTerm, searchTerm);
-    }
+    const [totalCount, data] = await Promise.all([
+      prisma.product.count({ where }),
+      prisma.product.findMany({
+        where,
+        orderBy: { product_code: 'asc' },
+        skip,
+        take: pageSize,
+      }),
+    ]);
 
-    dataQuery += ' ORDER BY product_code LIMIT ? OFFSET ?';
-
-    const countResult = db().prepare(countQuery).get(...params) as { count: number };
-    const totalCount = countResult.count;
     const totalPages = Math.ceil(totalCount / pageSize);
 
-    const data = db().prepare(dataQuery).all(...params, pageSize, offset) as Product[];
-
     return {
-      data,
+      data: data as Product[],
       totalCount,
       page,
       pageSize,
@@ -44,51 +49,57 @@ export class ProductRepository {
     };
   }
 
-  getByCode(code: string): Product | null {
-    return (db().prepare('SELECT * FROM products WHERE product_code = ?').get(code) as Product) || null;
+  async getByCode(code: string): Promise<Product | null> {
+    return await prisma.product.findUnique({
+      where: { product_code: code },
+    }) as Product | null;
   }
 
-  search(keyword: string): Product[] {
-    const searchTerm = `%${keyword}%`;
-    return db()
-      .prepare('SELECT * FROM products WHERE product_code LIKE ? OR product_name LIKE ? ORDER BY product_code')
-      .all(searchTerm, searchTerm) as Product[];
+  async search(keyword: string): Promise<Product[]> {
+    return await prisma.product.findMany({
+      where: {
+        OR: [
+          { product_code: { contains: keyword } },
+          { product_name: { contains: keyword } },
+        ],
+      },
+      orderBy: { product_code: 'asc' },
+    }) as Product[];
   }
 
-  create(product: Omit<Product, 'created_at' | 'updated_at'>): Product {
-    db()
-      .prepare('INSERT INTO products (product_code, product_name, unit_price) VALUES (?, ?, ?)')
-      .run(product.product_code, product.product_name, product.unit_price);
-    return this.getByCode(product.product_code)!;
+  async create(product: Omit<Product, 'created_at' | 'updated_at'>): Promise<Product> {
+    return await prisma.product.create({
+      data: {
+        product_code: product.product_code,
+        product_name: product.product_name,
+        unit_price: product.unit_price,
+      },
+    }) as Product;
   }
 
-  update(code: string, product: Partial<Omit<Product, 'product_code' | 'created_at' | 'updated_at'>>): Product | null {
-    const updates: string[] = [];
-    const values: (string | number)[] = [];
-
-    if (product.product_name !== undefined) {
-      updates.push('product_name = ?');
-      values.push(product.product_name);
+  async update(code: string, product: Partial<Omit<Product, 'product_code' | 'created_at' | 'updated_at'>>): Promise<Product | null> {
+    try {
+      return await prisma.product.update({
+        where: { product_code: code },
+        data: {
+          ...(product.product_name !== undefined && { product_name: product.product_name }),
+          ...(product.unit_price !== undefined && { unit_price: product.unit_price }),
+        },
+      }) as Product;
+    } catch (error) {
+      return null;
     }
-    if (product.unit_price !== undefined) {
-      updates.push('unit_price = ?');
-      values.push(product.unit_price);
-    }
-
-    if (updates.length === 0) {
-      return this.getByCode(code);
-    }
-
-    updates.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(code);
-
-    db().prepare(`UPDATE products SET ${updates.join(', ')} WHERE product_code = ?`).run(...values);
-    return this.getByCode(code);
   }
 
-  delete(code: string): boolean {
-    const result = db().prepare('DELETE FROM products WHERE product_code = ?').run(code);
-    return result.changes > 0;
+  async delete(code: string): Promise<boolean> {
+    try {
+      await prisma.product.delete({
+        where: { product_code: code },
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
 

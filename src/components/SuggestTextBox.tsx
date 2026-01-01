@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { Input } from '@/components/ui/input';
 
 interface SuggestTextBoxProps<T> {
   value: string;
@@ -71,6 +72,7 @@ export default function SuggestTextBox<T>({
     async (keyword: string) => {
       if (startSearchChars > 0 && keyword.length < startSearchChars) {
         setSuggestions([]);
+        setIsOpen(false);
         return;
       }
 
@@ -78,13 +80,15 @@ export default function SuggestTextBox<T>({
       try {
         const items = await fetchSuggestions(keyword);
         setSuggestions(items);
-        if (items.length > 0) {
+        // アイテムがある場合、または検索中の場合はリストを開く
+        if (items.length > 0 || keyword.length >= startSearchChars) {
           setIsOpen(true);
           updateDropdownPosition();
         }
       } catch (error) {
         console.error('Failed to fetch suggestions:', error);
         setSuggestions([]);
+        setIsOpen(false);
       } finally {
         setIsLoading(false);
       }
@@ -134,7 +138,8 @@ export default function SuggestTextBox<T>({
     updateDropdownPosition();
     if (suggestions.length > 0) {
       setIsOpen(true);
-    } else if (startSearchChars === 0) {
+    } else if (startSearchChars === 0 || value.length >= startSearchChars) {
+      // すぐに検索を実行
       loadSuggestions(value);
     }
   };
@@ -192,7 +197,7 @@ export default function SuggestTextBox<T>({
   const dropdownContent = isOpen && typeof window !== 'undefined' ? createPortal(
     <div
       ref={listRef}
-      className="bg-white border border-gray-300 rounded shadow-lg overflow-y-auto"
+      className="bg-background border border-input rounded-md shadow-lg overflow-y-auto"
       style={{
         position: 'absolute',
         top: dropdownPosition.top,
@@ -207,18 +212,17 @@ export default function SuggestTextBox<T>({
       }}
     >
       {isLoading ? (
-        <div className="p-2 text-center text-gray-500">読み込み中...</div>
+        <div className="p-2 text-center text-muted-foreground text-sm">読み込み中...</div>
       ) : suggestions.length === 0 ? (
-        <div className="p-2 text-center text-gray-500">該当なし</div>
+        <div className="p-2 text-center text-muted-foreground text-sm">該当なし</div>
       ) : (
         suggestions.map((item, index) => (
           <button
             key={index}
             type="button"
-            className={`w-full text-left px-3 py-2 hover:bg-blue-50 ${
-              index === selectedIndex ? 'bg-blue-100' : ''
+            className={`w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${
+              index === selectedIndex ? 'bg-accent text-accent-foreground' : ''
             }`}
-            style={{ display: 'block', width: '100%', textAlign: 'left' }}
             onClick={() => handleSelect(item)}
           >
             {displayValueSelector(item)}
@@ -230,8 +234,8 @@ export default function SuggestTextBox<T>({
   ) : null;
 
   return (
-    <div className="position-relative w-100">
-      <input
+    <div className="relative w-full">
+      <Input
         ref={inputRef}
         id={id}
         type="text"
@@ -241,7 +245,7 @@ export default function SuggestTextBox<T>({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={`form-control ${className}`}
+        className={className}
         autoComplete="off"
       />
       {dropdownContent}
